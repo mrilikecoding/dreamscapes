@@ -482,6 +482,9 @@ class DreamscapeApp {
         const saveBtn = document.getElementById('savePresetBtn');
         saveBtn.addEventListener('click', () => this.promptSavePreset());
 
+        const randomBtn = document.getElementById('randomMixBtn');
+        randomBtn.addEventListener('click', () => this.generateRandomMix());
+
         // Delegate click events for preset items
         const presetsList = document.getElementById('presetsList');
         presetsList.addEventListener('click', (e) => {
@@ -531,6 +534,49 @@ class DreamscapeApp {
         const name = prompt('Enter a name for this preset:');
         if (name && name.trim()) {
             this.savePreset(name.trim());
+        }
+    }
+
+    async generateRandomMix() {
+        // Stop any current sounds
+        this.stopSound();
+
+        // Get all available sound types
+        const allSounds = Object.keys(this.soundNames);
+
+        // Pick random number of sounds (2-4)
+        const numSounds = 2 + Math.floor(Math.random() * 3);
+
+        // Shuffle and pick sounds
+        const shuffled = allSounds.sort(() => Math.random() - 0.5);
+        const selectedSounds = shuffled.slice(0, numSounds);
+
+        // Generate random volumes (0.3 - 1.0 to ensure audible)
+        const soundVolumes = selectedSounds.map(() => 0.3 + Math.random() * 0.7);
+
+        // Random master volume (0.4 - 0.8)
+        const masterVolume = 0.4 + Math.random() * 0.4;
+        this.engine.setVolume(masterVolume);
+        document.getElementById('volumeSlider').value = masterVolume * 100;
+
+        // Play each sound
+        for (let i = 0; i < selectedSounds.length; i++) {
+            const soundType = selectedSounds[i];
+            const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
+            if (card) {
+                await this.playSound(soundType, card);
+                const slider = card.querySelector('.sound-volume-slider');
+                if (slider) {
+                    slider.value = soundVolumes[i] * 100;
+                }
+            }
+        }
+
+        // Small delay then fade in
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        for (let i = 0; i < selectedSounds.length; i++) {
+            this.engine.fadeSoundVolume(selectedSounds[i], soundVolumes[i], 400);
         }
     }
 

@@ -351,6 +351,12 @@ select:hover, select:focus {
     margin: 0;
 }
 
+.presets-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.random-mix-btn,
 .save-preset-btn {
     display: flex;
     align-items: center;
@@ -367,11 +373,13 @@ select:hover, select:focus {
     transition: var(--transition);
 }
 
+.random-mix-btn:hover,
 .save-preset-btn:hover {
     background: var(--accent-secondary);
     transform: translateY(-1px);
 }
 
+.random-mix-btn .btn-icon,
 .save-preset-btn .btn-icon {
     font-size: 1.1rem;
     font-weight: 700;
@@ -817,6 +825,7 @@ footer p {
 .sound-card:focus,
 select:focus,
 input[type="range"]:focus,
+.random-mix-btn:focus,
 .save-preset-btn:focus,
 .preset-load-btn:focus,
 .preset-delete-btn:focus {

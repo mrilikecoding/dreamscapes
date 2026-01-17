@@ -72,10 +72,16 @@
             <section class="presets-section">
                 <div class="presets-header">
                     <h2>My Presets</h2>
-                    <button class="save-preset-btn" id="savePresetBtn" title="Save current mix as preset">
-                        <span class="btn-icon">+</span>
-                        <span>Save Preset</span>
-                    </button>
+                    <div class="presets-actions">
+                        <button class="random-mix-btn" id="randomMixBtn" title="Generate a random sound mix">
+                            <span class="btn-icon">🎲</span>
+                            <span>Random Mix</span>
+                        </button>
+                        <button class="save-preset-btn" id="savePresetBtn" title="Save current mix as preset">
+                            <span class="btn-icon">+</span>
+                            <span>Save Preset</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="presets-list" id="presetsList">
                     <p class="presets-empty" id="presetsEmpty">No saved presets yet. Create a mix and save it!</p>
