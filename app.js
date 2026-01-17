@@ -14,6 +14,8 @@ class DreamscapeApp {
         this.ctx = null;
         this.perlin = new PerlinNoise();
         this.time = 0;
+        this.isPaused = false;
+        this.pausedVolumes = new Map(); // Store volumes before pausing
 
         this.soundNames = {
             'white-noise': 'White Noise',
@@ -58,6 +60,10 @@ class DreamscapeApp {
         document.querySelectorAll('.sound-card').forEach(card => {
             card.addEventListener('click', () => this.handleSoundClick(card));
         });
+
+        // Pause button
+        const pauseBtn = document.getElementById('pauseBtn');
+        pauseBtn.addEventListener('click', () => this.togglePause());
 
         // Volume control
         const volumeSlider = document.getElementById('volumeSlider');
@@ -125,6 +131,9 @@ class DreamscapeApp {
         // Start visualization
         this.visualizerActive = true;
         this.startVisualization();
+
+        // Update pause button state
+        this.updatePauseButtonState();
     }
 
     stopSound(soundType = null, card = null) {
@@ -156,6 +165,9 @@ class DreamscapeApp {
                 this.startIdleAnimation();
                 this.clearTimer();
             }
+
+            // Update pause button state
+            this.updatePauseButtonState();
         } else {
             // Stop all sounds
             this.engine.stop();
@@ -175,6 +187,9 @@ class DreamscapeApp {
 
             // Clear timer
             this.clearTimer();
+
+            // Update pause button state
+            this.updatePauseButtonState();
         }
     }
 
@@ -304,6 +319,69 @@ class DreamscapeApp {
                 document.getElementById('volumeSlider').value = startVolume * 100;
             }
         }, 100);
+    }
+
+    togglePause() {
+        if (this.isPaused) {
+            this.resumeSounds();
+        } else {
+            this.pauseSounds();
+        }
+    }
+
+    pauseSounds() {
+        if (this.activeSounds.size === 0) return;
+
+        this.isPaused = true;
+        this.pausedVolumes.clear();
+
+        // Store current volumes
+        this.activeSounds.forEach(soundType => {
+            this.pausedVolumes.set(soundType, this.engine.getSoundVolume(soundType));
+        });
+
+        // Store master volume
+        this.pausedMasterVolume = this.engine.volume;
+
+        // Fade out all sounds over 3 seconds
+        this.activeSounds.forEach(soundType => {
+            this.engine.fadeSoundVolume(soundType, 0, 3000);
+        });
+
+        // Update UI
+        const pauseBtn = document.getElementById('pauseBtn');
+        const pauseIcon = document.getElementById('pauseIcon');
+        pauseBtn.classList.add('paused');
+        pauseIcon.textContent = '▶';
+    }
+
+    resumeSounds() {
+        if (!this.isPaused) return;
+
+        this.isPaused = false;
+
+        // Fade in all sounds to their stored volumes over 3 seconds
+        this.pausedVolumes.forEach((volume, soundType) => {
+            this.engine.fadeSoundVolume(soundType, volume, 3000);
+        });
+
+        // Update UI
+        const pauseBtn = document.getElementById('pauseBtn');
+        const pauseIcon = document.getElementById('pauseIcon');
+        pauseBtn.classList.remove('paused');
+        pauseIcon.textContent = '⏸';
+    }
+
+    updatePauseButtonState() {
+        const pauseBtn = document.getElementById('pauseBtn');
+        pauseBtn.disabled = this.activeSounds.size === 0;
+
+        // Reset pause state if no sounds
+        if (this.activeSounds.size === 0) {
+            this.isPaused = false;
+            pauseBtn.classList.remove('paused');
+            document.getElementById('pauseIcon').textContent = '⏸';
+        }
     }
 
     startVisualization() {
