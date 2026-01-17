@@ -189,7 +189,6 @@ h1 {
     gap: 1.5rem;
     padding: 0.75rem 1.5rem;
     background: rgba(0, 0, 0, 0.3);
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 /* Pause Button with Progress Ring */
@@ -368,32 +367,67 @@ h1 {
     font-size: 1rem;
 }
 
-/* Presets Row */
-.presets-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--bg-secondary);
-    border-radius: var(--border-radius-sm);
-    margin-top: 1rem;
+/* Button Progress Bar (for Random button) */
+.action-btn {
+    position: relative;
+    overflow: hidden;
 }
 
-.presets-row .presets-label {
-    font-size: 0.85rem;
+.action-btn .btn-progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 0%;
+    background: var(--accent-secondary);
+    border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
+    transition: width 0.1s linear;
+}
+
+.action-btn.loading .btn-progress {
+    background: var(--accent-primary);
+}
+
+.action-btn.active .btn-progress {
+    width: 100%;
+    background: var(--accent-secondary);
+}
+
+.action-btn.fading-out .btn-progress {
+    background: var(--text-muted);
+}
+
+/* Presets Tray (inside now-playing component) */
+.presets-tray {
+    display: none; /* Hidden when empty */
+    padding: 0.5rem 1.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    text-align: center;
+}
+
+.presets-tray.has-presets {
+    display: block;
+}
+
+.presets-tray .presets-label {
+    display: block;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.4rem;
 }
 
-.presets-row .presets-list {
+.presets-tray .presets-list {
     display: flex;
+    justify-content: center;
     gap: 0.5rem;
-    flex: 1;
     overflow-x: auto;
     padding: 0.25rem 0;
 }
 
-.presets-row .presets-empty {
+.presets-tray .presets-empty {
     font-size: 0.8rem;
     color: var(--text-muted);
     font-style: italic;
@@ -600,7 +634,7 @@ select:hover, select:focus {
     cursor: not-allowed;
 }
 
-/* Preset Items (used in presets-row) */
+/* Preset Items (used in presets-tray) */
 
 .preset-item {
     position: relative;
@@ -1026,7 +1060,7 @@ footer a:hover {
         align-items: flex-start;
     }
 
-    .presets-row {
+    .presets-tray .presets-list {
         flex-wrap: wrap;
         gap: 0.5rem;
     }

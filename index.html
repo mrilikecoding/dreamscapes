@@ -85,6 +85,13 @@
                         </button>
                     </div>
                 </div>
+                <!-- Presets Tray -->
+                <div class="presets-tray" id="presetsTray">
+                    <span class="presets-label">Saved Presets</span>
+                    <div class="presets-list" id="presetsList">
+                        <p class="presets-empty" id="presetsEmpty">No saved presets</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Sound Selection Zone -->
@@ -95,19 +102,12 @@
                         <button class="action-btn" id="randomMixBtn" title="Generate a random sound mix">
                             <span class="btn-icon">🎲</span>
                             <span>Random</span>
+                            <span class="btn-progress"></span>
                         </button>
                         <button class="action-btn" id="savePresetBtn" title="Save current mix as preset">
                             <span class="btn-icon">💾</span>
                             <span>Save</span>
                         </button>
-                    </div>
-                </div>
-
-                <!-- Presets -->
-                <div class="presets-row">
-                    <span class="presets-label">Presets:</span>
-                    <div class="presets-list" id="presetsList">
-                        <p class="presets-empty" id="presetsEmpty">None saved</p>
                     </div>
                 </div>
 

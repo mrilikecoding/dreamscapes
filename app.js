@@ -521,6 +521,9 @@ class DreamscapeApp {
                 }
                 this.activePresetId = null;
             }
+
+            // Clear random button active state
+            this.clearRandomActiveState();
         }
     }
 
@@ -760,6 +763,12 @@ class DreamscapeApp {
         if (this.isTransitioning) return;
         this.isTransitioning = true;
 
+        // Start button loading animation
+        const randomBtn = document.getElementById('randomMixBtn');
+        const btnProgress = randomBtn?.querySelector('.btn-progress');
+        if (randomBtn) randomBtn.classList.add('loading');
+        if (btnProgress) this.animateButtonProgress(btnProgress, 0, 100, TRANSITION_DURATION);
+
         // Clear active preset since random mix isn't a saved preset
         if (this.activePresetId) {
             const activePresetEl = document.querySelector(`.preset-item[data-preset-id="${this.activePresetId}"]`);
@@ -786,14 +795,14 @@ class DreamscapeApp {
         const shuffled = allSounds.sort(() => Math.random() - 0.5);
         const selectedSounds = shuffled.slice(0, numSounds);
 
-        // Generate random volumes (0.3 - 1.0 to ensure audible)
+        // Generate random volumes (0.2 - 0.5 to avoid loud noise)
         const soundVolumes = {};
         selectedSounds.forEach(s => {
-            soundVolumes[s] = 0.3 + Math.random() * 0.7;
+            soundVolumes[s] = 0.2 + Math.random() * 0.3;
         });
 
-        // Random master volume (0.4 - 0.8)
-        const masterVolume = 0.4 + Math.random() * 0.4;
+        // Random master volume (0.3 - 0.5)
+        const masterVolume = 0.3 + Math.random() * 0.2;
         this.engine.setVolume(masterVolume);
         document.getElementById('volumeSlider').value = masterVolume * 100;
 
@@ -845,7 +854,58 @@ class DreamscapeApp {
             }
             this.updateNowPlayingDisplay();
             this.isTransitioning = false;
+
+            // Keep bar filled to indicate random mix is active
+            if (randomBtn) {
+                randomBtn.classList.remove('loading');
+                randomBtn.classList.add('active');
+            }
         }, TRANSITION_DURATION + 100);
+    }
+
+    // Clear random button active state (called when loading a preset)
+    clearRandomActiveState(animate = false) {
+        const randomBtn = document.getElementById('randomMixBtn');
+        const btnProgress = randomBtn?.querySelector('.btn-progress');
+
+        if (!randomBtn?.classList.contains('active')) return;
+
+        randomBtn.classList.remove('active');
+        randomBtn.classList.add('fading-out');
+
+        if (animate && btnProgress) {
+            // Animate the bar down
+            const currentWidth = parseFloat(btnProgress.style.width) || 100;
+            this.animateButtonProgress(btnProgress, currentWidth, 0, TRANSITION_DURATION);
+
+            // Clean up after animation
+            setTimeout(() => {
+                randomBtn.classList.remove('fading-out', 'loading');
+            }, TRANSITION_DURATION + 100);
+        } else {
+            randomBtn.classList.remove('fading-out', 'loading');
+            if (btnProgress) btnProgress.style.width = '0%';
+        }
+    }
+
+    // Animate a button's progress bar
+    animateButtonProgress(progressEl, fromPercent, toPercent, duration) {
+        if (!progressEl) return;
+
+        const startTime = Date.now();
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const currentWidth = fromPercent + (toPercent - fromPercent) * progress;
+            progressEl.style.width = `${currentWidth}%`;
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
     }
 
     savePreset(name) {
@@ -878,6 +938,9 @@ class DreamscapeApp {
     async loadPreset(preset) {
         const newPresetId = preset.id;
         const newPresetEl = document.querySelector(`.preset-item[data-preset-id="${newPresetId}"]`);
+
+        // Clear random button active state when loading a preset (animate the bar down)
+        this.clearRandomActiveState(true);
 
         // If already transitioning, interrupt and clean up immediately
         if (this.isTransitioning) {
@@ -1074,7 +1137,7 @@ class DreamscapeApp {
 
     renderPresetsList() {
         const container = document.getElementById('presetsList');
-        const presetsRow = container.closest('.presets-row');
+        const presetsTray = document.getElementById('presetsTray');
         const emptyMsg = document.getElementById('presetsEmpty');
         const presets = this.getPresets();
 
@@ -1082,14 +1145,15 @@ class DreamscapeApp {
         container.querySelectorAll('.preset-item').forEach(el => el.remove());
 
         if (presets.length === 0) {
-            // Hide the entire presets row when empty
-            if (presetsRow) presetsRow.style.display = 'none';
+            // Hide tray when no presets
+            if (presetsTray) presetsTray.classList.remove('has-presets');
+            if (emptyMsg) emptyMsg.style.display = '';
             return;
         }
 
-        // Show presets row when there are presets
-        if (presetsRow) presetsRow.style.display = '';
-        emptyMsg.style.display = 'none';
+        // Show tray when there are presets
+        if (presetsTray) presetsTray.classList.add('has-presets');
+        if (emptyMsg) emptyMsg.style.display = 'none';
 
         // Sort by most recent first
         presets.sort((a, b) => b.createdAt - a.createdAt);
