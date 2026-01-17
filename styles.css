@@ -805,10 +805,28 @@ footer p {
     margin-bottom: 0.5rem;
 }
 
+footer a {
+    color: var(--accent-secondary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+footer a:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
 .disclaimer {
     font-size: 0.8rem;
     color: var(--text-muted);
     opacity: 0.7;
+}
+
+.dedication {
+    font-size: 0.9rem;
+    color: var(--accent-secondary);
+    font-style: italic;
+    margin-top: 1rem;
 }
 
 /* Stars animation for background */
