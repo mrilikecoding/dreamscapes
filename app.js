@@ -352,9 +352,9 @@ class DreamscapeApp {
         // Store master volume
         this.pausedMasterVolume = this.engine.volume;
 
-        // Fade out all sounds over 3 seconds
+        // Fade out all sounds over 10 seconds to avoid startle reflex
         this.activeSounds.forEach(soundType => {
-            this.engine.fadeSoundVolume(soundType, 0, 3000);
+            this.engine.fadeSoundVolume(soundType, 0, 10000);
         });
 
         // Update UI
@@ -369,9 +369,9 @@ class DreamscapeApp {
 
         this.isPaused = false;
 
-        // Fade in all sounds to their stored volumes over 3 seconds
+        // Fade in all sounds to their stored volumes over 10 seconds
         this.pausedVolumes.forEach((volume, soundType) => {
-            this.engine.fadeSoundVolume(soundType, volume, 3000);
+            this.engine.fadeSoundVolume(soundType, volume, 10000);
         });
 
         // Update UI
