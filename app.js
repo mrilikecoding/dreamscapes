@@ -17,6 +17,14 @@ class DreamscapeApp {
         this.isPaused = false;
         this.pausedVolumes = new Map(); // Store volumes before pausing
 
+        // Screensaver state
+        this.screensaverActive = false;
+        this.screensaverCanvas = null;
+        this.screensaverCtx = null;
+        this.screensaverMode = 'stars';
+        this.screensaverAnimationId = null;
+        this.screensaverEntities = [];
+
         this.soundNames = {
             'white-noise': 'White Noise',
             'pink-noise': 'Pink Noise',
@@ -36,6 +44,7 @@ class DreamscapeApp {
         this.setupCanvas();
         this.setupEventListeners();
         this.setupPresetListeners();
+        this.setupScreensaver();
         this.renderPresetsList();
         this.startIdleAnimation();
     }
@@ -807,6 +816,333 @@ class DreamscapeApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // ==========================================
+    // Screensaver
+    // ==========================================
+
+    setupScreensaver() {
+        this.screensaverCanvas = document.getElementById('screensaverCanvas');
+        this.screensaverCtx = this.screensaverCanvas.getContext('2d');
+
+        const overlay = document.getElementById('screensaverOverlay');
+        const btn = document.getElementById('screensaverBtn');
+        const modeSelect = document.getElementById('screensaverMode');
+
+        btn.addEventListener('click', () => this.startScreensaver());
+        overlay.addEventListener('click', () => this.stopScreensaver());
+
+        modeSelect.addEventListener('change', (e) => {
+            this.screensaverMode = e.target.value;
+            if (this.screensaverActive) {
+                this.initScreensaverEntities();
+            }
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (this.screensaverActive) {
+                this.resizeScreensaverCanvas();
+                this.initScreensaverEntities();
+            }
+        });
+    }
+
+    resizeScreensaverCanvas() {
+        this.screensaverCanvas.width = window.innerWidth * window.devicePixelRatio;
+        this.screensaverCanvas.height = window.innerHeight * window.devicePixelRatio;
+        this.screensaverCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+    startScreensaver() {
+        this.screensaverActive = true;
+        this.screensaverMode = document.getElementById('screensaverMode').value;
+
+        const overlay = document.getElementById('screensaverOverlay');
+        overlay.classList.add('active');
+        overlay.classList.remove('hide-hint');
+
+        // Hide hint after 3 seconds
+        setTimeout(() => {
+            overlay.classList.add('hide-hint');
+        }, 3000);
+
+        this.resizeScreensaverCanvas();
+        this.initScreensaverEntities();
+        this.animateScreensaver();
+    }
+
+    stopScreensaver() {
+        this.screensaverActive = false;
+        document.getElementById('screensaverOverlay').classList.remove('active');
+
+        if (this.screensaverAnimationId) {
+            cancelAnimationFrame(this.screensaverAnimationId);
+            this.screensaverAnimationId = null;
+        }
+    }
+
+    initScreensaverEntities() {
+        this.screensaverEntities = [];
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        switch (this.screensaverMode) {
+            case 'stars':
+                // Create 150 stars with random positions and properties
+                for (let i = 0; i < 150; i++) {
+                    this.screensaverEntities.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        size: 0.5 + Math.random() * 2,
+                        twinkleSpeed: 0.5 + Math.random() * 2,
+                        twinkleOffset: Math.random() * Math.PI * 2,
+                        brightness: 0.3 + Math.random() * 0.7
+                    });
+                }
+                break;
+
+            case 'aurora':
+                // Create aurora wave bands
+                for (let i = 0; i < 5; i++) {
+                    this.screensaverEntities.push({
+                        yBase: height * (0.2 + i * 0.12),
+                        amplitude: 30 + Math.random() * 50,
+                        frequency: 0.002 + Math.random() * 0.003,
+                        speed: 0.0003 + Math.random() * 0.0005,
+                        hue: 120 + i * 20 + Math.random() * 30, // Green to cyan range
+                        alpha: 0.1 + Math.random() * 0.15,
+                        offset: Math.random() * 1000
+                    });
+                }
+                break;
+
+            case 'fireflies':
+                // Create 40 fireflies
+                for (let i = 0; i < 40; i++) {
+                    this.screensaverEntities.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        size: 2 + Math.random() * 3,
+                        pulseSpeed: 0.5 + Math.random() * 1.5,
+                        pulseOffset: Math.random() * Math.PI * 2,
+                        hue: 40 + Math.random() * 20 // Warm yellow-orange
+                    });
+                }
+                break;
+
+            case 'nebula':
+                // Nebula uses Perlin noise, no entities needed
+                // But we'll store some color parameters
+                this.screensaverEntities = [
+                    { hue: 260, name: 'purple' },  // Purple
+                    { hue: 200, name: 'blue' },    // Blue
+                    { hue: 320, name: 'pink' }     // Pink
+                ];
+                break;
+
+            case 'rain':
+                // Create 100 raindrops
+                for (let i = 0; i < 100; i++) {
+                    this.screensaverEntities.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        length: 10 + Math.random() * 20,
+                        speed: 2 + Math.random() * 3,
+                        opacity: 0.1 + Math.random() * 0.2
+                    });
+                }
+                break;
+        }
+    }
+
+    animateScreensaver() {
+        if (!this.screensaverActive) return;
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const ctx = this.screensaverCtx;
+
+        // Clear with slight fade for trails
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, width, height);
+
+        switch (this.screensaverMode) {
+            case 'stars':
+                this.drawStars(ctx, width, height);
+                break;
+            case 'aurora':
+                // Aurora needs full clear for clean gradient
+                ctx.fillStyle = 'rgba(0, 0, 8, 1)';
+                ctx.fillRect(0, 0, width, height);
+                this.drawAurora(ctx, width, height);
+                break;
+            case 'fireflies':
+                this.drawFireflies(ctx, width, height);
+                break;
+            case 'nebula':
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+                ctx.fillRect(0, 0, width, height);
+                this.drawNebula(ctx, width, height);
+                break;
+            case 'rain':
+                ctx.fillStyle = 'rgba(0, 0, 10, 0.3)';
+                ctx.fillRect(0, 0, width, height);
+                this.drawRain(ctx, width, height);
+                break;
+        }
+
+        this.time += 0.016; // ~60fps time increment
+        this.screensaverAnimationId = requestAnimationFrame(() => this.animateScreensaver());
+    }
+
+    drawStars(ctx, width, height) {
+        this.screensaverEntities.forEach(star => {
+            const twinkle = Math.sin(this.time * star.twinkleSpeed + star.twinkleOffset);
+            const alpha = star.brightness * (0.5 + twinkle * 0.5);
+
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.fill();
+
+            // Add subtle glow for larger stars
+            if (star.size > 1.5) {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size * 3, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(200, 220, 255, ${alpha * 0.1})`;
+                ctx.fill();
+            }
+        });
+    }
+
+    drawAurora(ctx, width, height) {
+        this.screensaverEntities.forEach(band => {
+            ctx.beginPath();
+
+            const points = [];
+            for (let x = 0; x <= width; x += 5) {
+                const noise1 = this.perlin.fbm(x * band.frequency + this.time * band.speed + band.offset, 3);
+                const noise2 = this.perlin.fbm(x * band.frequency * 0.5 + this.time * band.speed * 0.7 + band.offset + 500, 2);
+                const y = band.yBase + noise1 * band.amplitude + noise2 * band.amplitude * 0.5;
+                points.push({ x, y });
+            }
+
+            // Draw gradient band
+            const gradient = ctx.createLinearGradient(0, band.yBase - 100, 0, band.yBase + 100);
+            gradient.addColorStop(0, `hsla(${band.hue}, 80%, 50%, 0)`);
+            gradient.addColorStop(0.5, `hsla(${band.hue}, 80%, 60%, ${band.alpha})`);
+            gradient.addColorStop(1, `hsla(${band.hue}, 80%, 50%, 0)`);
+
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        });
+    }
+
+    drawFireflies(ctx, width, height) {
+        this.screensaverEntities.forEach(fly => {
+            // Update position with gentle wandering
+            fly.x += fly.vx + this.perlin.noise1d(this.time + fly.pulseOffset) * 0.3;
+            fly.y += fly.vy + this.perlin.noise1d(this.time * 1.3 + fly.pulseOffset + 100) * 0.3;
+
+            // Wrap around edges
+            if (fly.x < 0) fly.x = width;
+            if (fly.x > width) fly.x = 0;
+            if (fly.y < 0) fly.y = height;
+            if (fly.y > height) fly.y = 0;
+
+            // Pulse glow
+            const pulse = Math.sin(this.time * fly.pulseSpeed + fly.pulseOffset);
+            const alpha = 0.3 + pulse * 0.7;
+
+            if (alpha > 0.2) {
+                // Outer glow
+                const glowGradient = ctx.createRadialGradient(fly.x, fly.y, 0, fly.x, fly.y, fly.size * 8);
+                glowGradient.addColorStop(0, `hsla(${fly.hue}, 100%, 70%, ${alpha * 0.5})`);
+                glowGradient.addColorStop(0.5, `hsla(${fly.hue}, 100%, 50%, ${alpha * 0.2})`);
+                glowGradient.addColorStop(1, `hsla(${fly.hue}, 100%, 50%, 0)`);
+
+                ctx.beginPath();
+                ctx.arc(fly.x, fly.y, fly.size * 8, 0, Math.PI * 2);
+                ctx.fillStyle = glowGradient;
+                ctx.fill();
+
+                // Core
+                ctx.beginPath();
+                ctx.arc(fly.x, fly.y, fly.size, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${fly.hue}, 100%, 90%, ${alpha})`;
+                ctx.fill();
+            }
+        });
+    }
+
+    drawNebula(ctx, width, height) {
+        const scale = 0.003;
+        const timeScale = this.time * 0.05;
+
+        // Draw nebula clouds using Perlin noise sampling
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+
+            const noise = this.perlin.fbm(x * scale + timeScale, 4);
+            const noise2 = this.perlin.fbm(y * scale + timeScale + 500, 4);
+
+            if (noise > 0.1) {
+                const colorIndex = Math.floor((noise2 + 1) * 1.5) % 3;
+                const hue = this.screensaverEntities[colorIndex].hue;
+                const size = 20 + noise * 80;
+                const alpha = 0.02 + noise * 0.03;
+
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+                gradient.addColorStop(0, `hsla(${hue}, 60%, 50%, ${alpha})`);
+                gradient.addColorStop(1, `hsla(${hue}, 60%, 30%, 0)`);
+
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+        }
+    }
+
+    drawRain(ctx, width, height) {
+        ctx.strokeStyle = 'rgba(150, 180, 255, 0.3)';
+        ctx.lineWidth = 1;
+
+        this.screensaverEntities.forEach(drop => {
+            // Update position
+            drop.y += drop.speed;
+            drop.x += 0.5; // Slight wind
+
+            // Reset when off screen
+            if (drop.y > height) {
+                drop.y = -drop.length;
+                drop.x = Math.random() * width;
+            }
+            if (drop.x > width) {
+                drop.x = 0;
+            }
+
+            // Draw raindrop
+            ctx.beginPath();
+            ctx.moveTo(drop.x, drop.y);
+            ctx.lineTo(drop.x + 1, drop.y + drop.length);
+            ctx.strokeStyle = `rgba(150, 180, 255, ${drop.opacity})`;
+            ctx.stroke();
+        });
     }
 }
 

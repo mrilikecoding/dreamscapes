@@ -34,6 +34,19 @@
                     <span class="pause-icon" id="pauseIcon">⏸</span>
                 </button>
 
+                <div class="screensaver-control">
+                    <select id="screensaverMode">
+                        <option value="stars">Stars</option>
+                        <option value="aurora">Aurora</option>
+                        <option value="fireflies">Fireflies</option>
+                        <option value="nebula">Nebula</option>
+                        <option value="rain">Gentle Rain</option>
+                    </select>
+                    <button class="screensaver-btn" id="screensaverBtn" title="Enter screensaver mode">
+                        <span>🌙 Screensaver</span>
+                    </button>
+                </div>
+
                 <div class="volume-control">
                     <span class="volume-icon">🔈</span>
                     <input type="range" id="volumeSlider" min="0" max="100" value="50">
@@ -249,6 +262,12 @@
             <p>Made with 💜 for peaceful nights</p>
             <p class="disclaimer">Always place device away from baby. Recommended volume: conversational level (~50-60 dB).</p>
         </footer>
+    </div>
+
+    <!-- Screensaver Overlay -->
+    <div class="screensaver-overlay" id="screensaverOverlay">
+        <canvas id="screensaverCanvas"></canvas>
+        <div class="screensaver-hint" id="screensaverHint">Tap anywhere to exit</div>
     </div>
 
     <script src="perlin.js"></script>
