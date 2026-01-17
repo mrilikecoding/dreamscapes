@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreamscape — Baby Sleep Sounds</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <span class="moon">🌙</span>
+                <h1>Dreamscape</h1>
+            </div>
+            <p class="tagline">Science-backed sounds for peaceful sleep</p>
+        </header>
+
+        <main>
+            <div class="now-playing" id="nowPlaying">
+                <div class="visualizer" id="visualizer">
+                    <canvas id="visualizerCanvas"></canvas>
+                </div>
+                <div class="current-sound">
+                    <span id="currentSoundName">Select a sound</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="volume-control">
+                    <span class="volume-icon">🔈</span>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="50">
+                    <span class="volume-icon">🔊</span>
+                </div>
+
+                <div class="timer-control">
+                    <label for="timerSelect">Sleep Timer:</label>
+                    <select id="timerSelect">
+                        <option value="0">No timer</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="120">2 hours</option>
+                    </select>
+                    <span id="timerDisplay" class="timer-display"></span>
+                </div>
+            </div>
+
+            <div class="sound-grid">
+                <div class="sound-category">
+                    <h2>🔬 Noise Types</h2>
+                    <p class="category-info">Scientifically studied sound spectrums</p>
+                    <div class="sound-cards">
+                        <button class="sound-card" data-sound="white-noise">
+                            <div class="card-icon">◇</div>
+                            <div class="card-content">
+                                <h3>White Noise</h3>
+                                <p>Equal energy across all frequencies. Masks sudden sounds effectively.</p>
+                            </div>
+                        </button>
+                        <button class="sound-card" data-sound="pink-noise">
+                            <div class="card-icon">◆</div>
+                            <div class="card-content">
+                                <h3>Pink Noise</h3>
+                                <p>Deeper, balanced sound. Studies show improved deep sleep quality.</p>
+                            </div>
+                        </button>
+                        <button class="sound-card" data-sound="brown-noise">
+                            <div class="card-icon">●</div>
+                            <div class="card-content">
+                                <h3>Brown Noise</h3>
+                                <p>Deep, rumbling frequencies. Like distant thunder or waterfalls.</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sound-category">
+                    <h2>💒 Womb Sounds</h2>
+                    <p class="category-info">Familiar sounds from before birth</p>
+                    <div class="sound-cards">
+                        <button class="sound-card" data-sound="heartbeat">
+                            <div class="card-icon">💗</div>
+                            <div class="card-content">
+                                <h3>Heartbeat</h3>
+                                <p>Steady 70 BPM rhythm mimicking maternal heartbeat.</p>
+                            </div>
+                        </button>
+                        <button class="sound-card" data-sound="womb">
+                            <div class="card-icon">🫧</div>
+                            <div class="card-content">
+                                <h3>Womb</h3>
+                                <p>Low-frequency rumble simulating intrauterine environment.</p>
+                            </div>
+                        </button>
+                        <button class="sound-card" data-sound="shush">
+                            <div class="card-icon">🤫</div>
+                            <div class="card-content">
+                                <h3>Shushing</h3>
+                                <p>Rhythmic shush sounds mimicking blood flow in utero.</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sound-category">
+                    <h2>🌿 Nature Sounds</h2>
+                    <p class="category-info">Calming environmental ambience</p>
+                    <div class="sound-cards">
+                        <button class="sound-card" data-sound="rain">
+                            <div class="card-icon">🌧️</div>
+                            <div class="card-content">
+                                <h3>Gentle Rain</h3>
+                                <p>Soft rainfall with natural pink noise characteristics.</p>
+                            </div>
+                        </button>
+                        <button class="sound-card" data-sound="ocean">
+                            <div class="card-icon">🌊</div>
+                            <div class="card-content">
+                                <h3>Ocean Waves</h3>
+                                <p>Rhythmic waves with calming, predictable patterns.</p>
+                            </div>
+                        </button>
+                        <button class="sound-card" data-sound="stream">
+                            <div class="card-icon">💧</div>
+                            <div class="card-content">
+                                <h3>Babbling Brook</h3>
+                                <p>Gentle water sounds with soothing irregularity.</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="science-info">
+                <h2>💡 The Science</h2>
+                <div class="info-cards">
+                    <div class="info-card">
+                        <h4>White & Pink Noise</h4>
+                        <p>Research shows continuous noise helps infants fall asleep faster by masking environmental disturbances. Pink noise may enhance slow-wave sleep.</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>Womb Simulation</h4>
+                        <p>The womb is surprisingly loud (~80-90 dB). Familiar sounds like heartbeat and blood flow provide comfort through recognition.</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>Natural Rhythms</h4>
+                        <p>Predictable, rhythmic sounds like waves help regulate breathing and heart rate, promoting relaxation and sleep onset.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Made with 💜 for peaceful nights</p>
+            <p class="disclaimer">Always place device away from baby. Recommended volume: conversational level (~50-60 dB).</p>
+        </footer>
+    </div>
+
+    <script src="perlin.js"></script>
+    <script src="audio.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
