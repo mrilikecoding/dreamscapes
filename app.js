@@ -910,9 +910,9 @@ class DreamscapeApp {
                         yBase: height * (0.2 + i * 0.12),
                         amplitude: 30 + Math.random() * 50,
                         frequency: 0.001 + Math.random() * 0.002,
-                        speed: 0.00005 + Math.random() * 0.0001, // Much slower movement
+                        speed: 0.0002 + Math.random() * 0.0003, // Slow but visible movement
                         hue: 120 + i * 20 + Math.random() * 30, // Green to cyan range
-                        alpha: 0.15 + Math.random() * 0.2, // Slightly more visible
+                        alpha: 0.15 + Math.random() * 0.2,
                         offset: Math.random() * 1000
                     });
                 }
@@ -943,27 +943,15 @@ class DreamscapeApp {
                         y: Math.random() * height,
                         size: 100 + Math.random() * 200,
                         hue: hues[Math.floor(Math.random() * hues.length)],
-                        alpha: 0.03 + Math.random() * 0.05,
-                        driftX: (Math.random() - 0.5) * 0.05, // Very slow drift
-                        driftY: (Math.random() - 0.5) * 0.05,
-                        pulseSpeed: 0.02 + Math.random() * 0.03,
+                        alpha: 0.06 + Math.random() * 0.08, // Brighter
+                        driftX: (Math.random() - 0.5) * 0.15, // Slightly faster drift
+                        driftY: (Math.random() - 0.5) * 0.15,
+                        pulseSpeed: 0.05 + Math.random() * 0.05, // Slightly faster pulse
                         pulseOffset: Math.random() * Math.PI * 2
                     });
                 }
                 break;
 
-            case 'rain':
-                // Create 80 raindrops - gentle rain
-                for (let i = 0; i < 80; i++) {
-                    this.screensaverEntities.push({
-                        x: Math.random() * width,
-                        y: Math.random() * height,
-                        length: 15 + Math.random() * 25,
-                        speed: 0.5 + Math.random() * 1, // Much slower fall
-                        opacity: 0.08 + Math.random() * 0.15
-                    });
-                }
-                break;
         }
     }
 
@@ -996,11 +984,6 @@ class DreamscapeApp {
                 ctx.fillStyle = 'rgba(5, 0, 15, 1)';
                 ctx.fillRect(0, 0, width, height);
                 this.drawNebula(ctx, width, height);
-                break;
-            case 'rain':
-                ctx.fillStyle = 'rgba(0, 0, 10, 0.3)';
-                ctx.fillRect(0, 0, width, height);
-                this.drawRain(ctx, width, height);
                 break;
         }
 
@@ -1077,21 +1060,21 @@ class DreamscapeApp {
             const alpha = 0.3 + pulse * 0.7;
 
             if (alpha > 0.2) {
-                // Outer glow
-                const glowGradient = ctx.createRadialGradient(fly.x, fly.y, 0, fly.x, fly.y, fly.size * 8);
-                glowGradient.addColorStop(0, `hsla(${fly.hue}, 100%, 70%, ${alpha * 0.5})`);
-                glowGradient.addColorStop(0.5, `hsla(${fly.hue}, 100%, 50%, ${alpha * 0.2})`);
-                glowGradient.addColorStop(1, `hsla(${fly.hue}, 100%, 50%, 0)`);
+                // Outer glow - dimmer
+                const glowGradient = ctx.createRadialGradient(fly.x, fly.y, 0, fly.x, fly.y, fly.size * 6);
+                glowGradient.addColorStop(0, `hsla(${fly.hue}, 80%, 60%, ${alpha * 0.25})`);
+                glowGradient.addColorStop(0.5, `hsla(${fly.hue}, 80%, 45%, ${alpha * 0.1})`);
+                glowGradient.addColorStop(1, `hsla(${fly.hue}, 80%, 40%, 0)`);
 
                 ctx.beginPath();
-                ctx.arc(fly.x, fly.y, fly.size * 8, 0, Math.PI * 2);
+                ctx.arc(fly.x, fly.y, fly.size * 6, 0, Math.PI * 2);
                 ctx.fillStyle = glowGradient;
                 ctx.fill();
 
-                // Core
+                // Core - dimmer
                 ctx.beginPath();
                 ctx.arc(fly.x, fly.y, fly.size, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${fly.hue}, 100%, 90%, ${alpha})`;
+                ctx.fillStyle = `hsla(${fly.hue}, 80%, 70%, ${alpha * 0.6})`;
                 ctx.fill();
             }
         });
@@ -1130,32 +1113,6 @@ class DreamscapeApp {
         });
     }
 
-    drawRain(ctx, width, height) {
-        ctx.strokeStyle = 'rgba(150, 180, 255, 0.3)';
-        ctx.lineWidth = 1;
-
-        this.screensaverEntities.forEach(drop => {
-            // Update position
-            drop.y += drop.speed;
-            drop.x += 0.1; // Very slight wind
-
-            // Reset when off screen
-            if (drop.y > height) {
-                drop.y = -drop.length;
-                drop.x = Math.random() * width;
-            }
-            if (drop.x > width) {
-                drop.x = 0;
-            }
-
-            // Draw raindrop
-            ctx.beginPath();
-            ctx.moveTo(drop.x, drop.y);
-            ctx.lineTo(drop.x + 1, drop.y + drop.length);
-            ctx.strokeStyle = `rgba(150, 180, 255, ${drop.opacity})`;
-            ctx.stroke();
-        });
-    }
 }
 
 // Initialize app when DOM is ready
