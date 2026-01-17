@@ -896,7 +896,7 @@ class DreamscapeApp {
                         x: Math.random() * width,
                         y: Math.random() * height,
                         size: 0.5 + Math.random() * 2,
-                        twinkleSpeed: 0.5 + Math.random() * 2,
+                        twinkleSpeed: 0.1 + Math.random() * 0.3, // Much slower twinkle
                         twinkleOffset: Math.random() * Math.PI * 2,
                         brightness: 0.3 + Math.random() * 0.7
                     });
@@ -909,10 +909,10 @@ class DreamscapeApp {
                     this.screensaverEntities.push({
                         yBase: height * (0.2 + i * 0.12),
                         amplitude: 30 + Math.random() * 50,
-                        frequency: 0.002 + Math.random() * 0.003,
-                        speed: 0.0003 + Math.random() * 0.0005,
+                        frequency: 0.001 + Math.random() * 0.002,
+                        speed: 0.00005 + Math.random() * 0.0001, // Much slower movement
                         hue: 120 + i * 20 + Math.random() * 30, // Green to cyan range
-                        alpha: 0.1 + Math.random() * 0.15,
+                        alpha: 0.15 + Math.random() * 0.2, // Slightly more visible
                         offset: Math.random() * 1000
                     });
                 }
@@ -924,10 +924,10 @@ class DreamscapeApp {
                     this.screensaverEntities.push({
                         x: Math.random() * width,
                         y: Math.random() * height,
-                        vx: (Math.random() - 0.5) * 0.5,
-                        vy: (Math.random() - 0.5) * 0.5,
+                        vx: (Math.random() - 0.5) * 0.1, // Much slower drift
+                        vy: (Math.random() - 0.5) * 0.1,
                         size: 2 + Math.random() * 3,
-                        pulseSpeed: 0.5 + Math.random() * 1.5,
+                        pulseSpeed: 0.1 + Math.random() * 0.3, // Much slower pulse
                         pulseOffset: Math.random() * Math.PI * 2,
                         hue: 40 + Math.random() * 20 // Warm yellow-orange
                     });
@@ -935,24 +935,32 @@ class DreamscapeApp {
                 break;
 
             case 'nebula':
-                // Nebula uses Perlin noise, no entities needed
-                // But we'll store some color parameters
-                this.screensaverEntities = [
-                    { hue: 260, name: 'purple' },  // Purple
-                    { hue: 200, name: 'blue' },    // Blue
-                    { hue: 320, name: 'pink' }     // Pink
-                ];
-                break;
-
-            case 'rain':
-                // Create 100 raindrops
-                for (let i = 0; i < 100; i++) {
+                // Create nebula clouds - large soft circles that drift slowly
+                const hues = [260, 200, 320, 280, 180]; // Purple, blue, pink, violet, cyan
+                for (let i = 0; i < 25; i++) {
                     this.screensaverEntities.push({
                         x: Math.random() * width,
                         y: Math.random() * height,
-                        length: 10 + Math.random() * 20,
-                        speed: 2 + Math.random() * 3,
-                        opacity: 0.1 + Math.random() * 0.2
+                        size: 100 + Math.random() * 200,
+                        hue: hues[Math.floor(Math.random() * hues.length)],
+                        alpha: 0.03 + Math.random() * 0.05,
+                        driftX: (Math.random() - 0.5) * 0.05, // Very slow drift
+                        driftY: (Math.random() - 0.5) * 0.05,
+                        pulseSpeed: 0.02 + Math.random() * 0.03,
+                        pulseOffset: Math.random() * Math.PI * 2
+                    });
+                }
+                break;
+
+            case 'rain':
+                // Create 80 raindrops - gentle rain
+                for (let i = 0; i < 80; i++) {
+                    this.screensaverEntities.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        length: 15 + Math.random() * 25,
+                        speed: 0.5 + Math.random() * 1, // Much slower fall
+                        opacity: 0.08 + Math.random() * 0.15
                     });
                 }
                 break;
@@ -984,7 +992,8 @@ class DreamscapeApp {
                 this.drawFireflies(ctx, width, height);
                 break;
             case 'nebula':
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+                // Full clear with dark background for nebula
+                ctx.fillStyle = 'rgba(5, 0, 15, 1)';
                 ctx.fillRect(0, 0, width, height);
                 this.drawNebula(ctx, width, height);
                 break;
@@ -1053,9 +1062,9 @@ class DreamscapeApp {
 
     drawFireflies(ctx, width, height) {
         this.screensaverEntities.forEach(fly => {
-            // Update position with gentle wandering
-            fly.x += fly.vx + this.perlin.noise1d(this.time + fly.pulseOffset) * 0.3;
-            fly.y += fly.vy + this.perlin.noise1d(this.time * 1.3 + fly.pulseOffset + 100) * 0.3;
+            // Update position with gentle wandering - very slow
+            fly.x += fly.vx + this.perlin.noise1d(this.time * 0.2 + fly.pulseOffset) * 0.08;
+            fly.y += fly.vy + this.perlin.noise1d(this.time * 0.2 + fly.pulseOffset + 100) * 0.08;
 
             // Wrap around edges
             if (fly.x < 0) fly.x = width;
@@ -1089,33 +1098,36 @@ class DreamscapeApp {
     }
 
     drawNebula(ctx, width, height) {
-        const scale = 0.003;
-        const timeScale = this.time * 0.05;
+        this.screensaverEntities.forEach(cloud => {
+            // Slow drift
+            cloud.x += cloud.driftX;
+            cloud.y += cloud.driftY;
 
-        // Draw nebula clouds using Perlin noise sampling
-        for (let i = 0; i < 50; i++) {
-            const x = Math.random() * width;
-            const y = Math.random() * height;
+            // Wrap around edges
+            if (cloud.x < -cloud.size) cloud.x = width + cloud.size;
+            if (cloud.x > width + cloud.size) cloud.x = -cloud.size;
+            if (cloud.y < -cloud.size) cloud.y = height + cloud.size;
+            if (cloud.y > height + cloud.size) cloud.y = -cloud.size;
 
-            const noise = this.perlin.fbm(x * scale + timeScale, 4);
-            const noise2 = this.perlin.fbm(y * scale + timeScale + 500, 4);
+            // Gentle pulse
+            const pulse = Math.sin(this.time * cloud.pulseSpeed + cloud.pulseOffset);
+            const currentAlpha = cloud.alpha * (0.7 + pulse * 0.3);
+            const currentSize = cloud.size * (0.9 + pulse * 0.1);
 
-            if (noise > 0.1) {
-                const colorIndex = Math.floor((noise2 + 1) * 1.5) % 3;
-                const hue = this.screensaverEntities[colorIndex].hue;
-                const size = 20 + noise * 80;
-                const alpha = 0.02 + noise * 0.03;
+            // Draw soft cloud
+            const gradient = ctx.createRadialGradient(
+                cloud.x, cloud.y, 0,
+                cloud.x, cloud.y, currentSize
+            );
+            gradient.addColorStop(0, `hsla(${cloud.hue}, 70%, 50%, ${currentAlpha})`);
+            gradient.addColorStop(0.4, `hsla(${cloud.hue}, 60%, 40%, ${currentAlpha * 0.5})`);
+            gradient.addColorStop(1, `hsla(${cloud.hue}, 50%, 30%, 0)`);
 
-                const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
-                gradient.addColorStop(0, `hsla(${hue}, 60%, 50%, ${alpha})`);
-                gradient.addColorStop(1, `hsla(${hue}, 60%, 30%, 0)`);
-
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fillStyle = gradient;
-                ctx.fill();
-            }
-        }
+            ctx.beginPath();
+            ctx.arc(cloud.x, cloud.y, currentSize, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        });
     }
 
     drawRain(ctx, width, height) {
@@ -1125,7 +1137,7 @@ class DreamscapeApp {
         this.screensaverEntities.forEach(drop => {
             // Update position
             drop.y += drop.speed;
-            drop.x += 0.5; // Slight wind
+            drop.x += 0.1; // Very slight wind
 
             // Reset when off screen
             if (drop.y > height) {
