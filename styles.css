@@ -831,6 +831,10 @@ footer a:hover {
     color: var(--accent-secondary);
 }
 
+.github-line {
+    margin-top: 0.25rem;
+}
+
 .github-link {
     display: inline-flex;
     align-items: center;
