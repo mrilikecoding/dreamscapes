@@ -649,6 +649,12 @@ select:hover, select:focus {
     box-shadow: 0 0 20px var(--accent-glow);
 }
 
+.sound-card.fading-out {
+    opacity: 0.6;
+    transition: opacity 10s ease-out;
+    pointer-events: none;
+}
+
 .sound-card.active .card-icon {
     color: var(--accent-secondary);
     animation: iconPulse 2s ease-in-out infinite;

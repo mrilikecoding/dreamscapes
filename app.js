@@ -3,6 +3,10 @@
  * Main application logic, UI control, and visualization
  */
 
+// Gentle transition duration to avoid startle reflex (in ms)
+// 10 seconds ensures smooth, non-startling transitions for sleeping babies
+const TRANSITION_DURATION = 10000;
+
 class DreamscapeApp {
     constructor() {
         this.engine = new SleepSoundEngine();
@@ -16,6 +20,7 @@ class DreamscapeApp {
         this.time = 0;
         this.isPaused = false;
         this.pausedVolumes = new Map(); // Store volumes before pausing
+        this.isTransitioning = false; // Prevent overlapping transitions
 
         // Screensaver state
         this.screensaverActive = false;
@@ -110,14 +115,49 @@ class DreamscapeApp {
     async handleSoundClick(card) {
         const soundType = card.dataset.sound;
 
-        // If this sound is already active, toggle it off
+        // If this sound is already active, fade it out gently
         if (this.activeSounds.has(soundType)) {
-            this.stopSound(soundType, card);
+            this.fadeOutAndRemoveSound(soundType, card);
             return;
         }
 
-        // Add this sound to the mix
+        // Add this sound to the mix with gentle fade-in
         await this.playSound(soundType, card);
+        // Fade in to default volume over transition duration
+        this.engine.fadeSoundVolume(soundType, 1.0, TRANSITION_DURATION);
+    }
+
+    fadeOutAndRemoveSound(soundType, card) {
+        // Start fading out
+        this.engine.fadeSoundVolume(soundType, 0, TRANSITION_DURATION);
+
+        // Visual feedback - show it's fading
+        if (card) {
+            card.classList.add('fading-out');
+        }
+
+        // After fade completes, clean up
+        setTimeout(() => {
+            this.engine.stop(soundType);
+            this.activeSounds.delete(soundType);
+
+            if (card) {
+                card.classList.remove('active', 'fading-out');
+                this.removeVolumeSlider(card);
+            }
+
+            this.updateNowPlayingDisplay();
+
+            // If no sounds left, switch to idle
+            if (this.activeSounds.size === 0) {
+                document.getElementById('nowPlaying').classList.remove('playing');
+                this.visualizerActive = false;
+                this.startIdleAnimation();
+                this.clearTimer();
+            }
+
+            this.updatePauseButtonState();
+        }, TRANSITION_DURATION + 100);
     }
 
     async playSound(soundType, card) {
@@ -625,8 +665,12 @@ class DreamscapeApp {
     }
 
     async generateRandomMix() {
-        // Stop any current sounds
-        this.stopSound();
+        // Prevent overlapping transitions
+        if (this.isTransitioning) return;
+        this.isTransitioning = true;
+
+        // Get currently playing sounds
+        const currentSounds = this.engine.getActiveSoundTypes();
 
         // Get all available sound types
         const allSounds = Object.keys(this.soundNames);
@@ -639,32 +683,65 @@ class DreamscapeApp {
         const selectedSounds = shuffled.slice(0, numSounds);
 
         // Generate random volumes (0.3 - 1.0 to ensure audible)
-        const soundVolumes = selectedSounds.map(() => 0.3 + Math.random() * 0.7);
+        const soundVolumes = {};
+        selectedSounds.forEach(s => {
+            soundVolumes[s] = 0.3 + Math.random() * 0.7;
+        });
 
         // Random master volume (0.4 - 0.8)
         const masterVolume = 0.4 + Math.random() * 0.4;
         this.engine.setVolume(masterVolume);
         document.getElementById('volumeSlider').value = masterVolume * 100;
 
-        // Play each sound
-        for (let i = 0; i < selectedSounds.length; i++) {
-            const soundType = selectedSounds[i];
+        // Start fading out sounds that won't be in the new mix
+        const soundsToFadeOut = currentSounds.filter(s => !selectedSounds.includes(s));
+        for (const soundType of soundsToFadeOut) {
+            this.engine.fadeSoundVolume(soundType, 0, TRANSITION_DURATION);
+        }
+
+        // For sounds that are in both old and new, cross-fade to new volume
+        const soundsToCrossfade = currentSounds.filter(s => selectedSounds.includes(s));
+        for (const soundType of soundsToCrossfade) {
+            const targetVolume = soundVolumes[soundType];
+            this.engine.fadeSoundVolume(soundType, targetVolume, TRANSITION_DURATION);
+            const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
+            if (card) {
+                const slider = card.querySelector('.sound-volume-slider');
+                if (slider) slider.value = targetVolume * 100;
+            }
+        }
+
+        // Start new sounds (not currently playing) at volume 0 and fade in
+        const soundsToStart = selectedSounds.filter(s => !currentSounds.includes(s));
+        for (const soundType of soundsToStart) {
             const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
             if (card) {
                 await this.playSound(soundType, card);
                 const slider = card.querySelector('.sound-volume-slider');
-                if (slider) {
-                    slider.value = soundVolumes[i] * 100;
-                }
+                if (slider) slider.value = soundVolumes[soundType] * 100;
             }
         }
 
-        // Small delay then fade in
+        // Small delay then fade in new sounds
         await new Promise(resolve => setTimeout(resolve, 50));
-
-        for (let i = 0; i < selectedSounds.length; i++) {
-            this.engine.fadeSoundVolume(selectedSounds[i], soundVolumes[i], 400);
+        for (const soundType of soundsToStart) {
+            this.engine.fadeSoundVolume(soundType, soundVolumes[soundType], TRANSITION_DURATION);
         }
+
+        // After transition completes, clean up faded-out sounds
+        setTimeout(() => {
+            for (const soundType of soundsToFadeOut) {
+                this.engine.stop(soundType);
+                this.activeSounds.delete(soundType);
+                const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
+                if (card) {
+                    card.classList.remove('active');
+                    this.removeVolumeSlider(card);
+                }
+            }
+            this.updateNowPlayingDisplay();
+            this.isTransitioning = false;
+        }, TRANSITION_DURATION + 100);
     }
 
     savePreset(name) {
@@ -695,8 +772,13 @@ class DreamscapeApp {
     }
 
     async loadPreset(preset) {
-        // Stop all current sounds first
-        this.stopSound();
+        // Prevent overlapping transitions
+        if (this.isTransitioning) return;
+        this.isTransitioning = true;
+
+        // Get currently playing sounds to fade out
+        const currentSounds = this.engine.getActiveSoundTypes();
+        const newSoundTypes = Object.keys(preset.sounds);
 
         // Set master volume
         this.engine.setVolume(preset.masterVolume);
@@ -717,26 +799,56 @@ class DreamscapeApp {
         }
         this.updateFadeoutControlState();
 
-        // Play each sound (starts at volume 0)
-        for (const [soundType, volume] of Object.entries(preset.sounds)) {
+        // Start fading out sounds that won't be in the new mix
+        const soundsToFadeOut = currentSounds.filter(s => !newSoundTypes.includes(s));
+        for (const soundType of soundsToFadeOut) {
+            this.engine.fadeSoundVolume(soundType, 0, TRANSITION_DURATION);
+        }
+
+        // For sounds that are in both old and new, cross-fade to new volume
+        const soundsToCrossfade = currentSounds.filter(s => newSoundTypes.includes(s));
+        for (const soundType of soundsToCrossfade) {
+            const targetVolume = preset.sounds[soundType];
+            this.engine.fadeSoundVolume(soundType, targetVolume, TRANSITION_DURATION);
+            // Update slider
             const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
             if (card) {
-                await this.playSound(soundType, card);
-                // Update the slider to target volume
                 const slider = card.querySelector('.sound-volume-slider');
-                if (slider) {
-                    slider.value = volume * 100;
-                }
+                if (slider) slider.value = targetVolume * 100;
             }
         }
 
-        // Small delay to ensure all sounds are playing, then fade in together
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        // Fade all sounds to their target volumes smoothly
-        for (const [soundType, volume] of Object.entries(preset.sounds)) {
-            this.engine.fadeSoundVolume(soundType, volume, 400);
+        // Start new sounds (not currently playing) at volume 0 and fade in
+        const soundsToStart = newSoundTypes.filter(s => !currentSounds.includes(s));
+        for (const soundType of soundsToStart) {
+            const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
+            if (card) {
+                await this.playSound(soundType, card);
+                const slider = card.querySelector('.sound-volume-slider');
+                if (slider) slider.value = preset.sounds[soundType] * 100;
+            }
         }
+
+        // Small delay to ensure new sounds are playing, then fade them in
+        await new Promise(resolve => setTimeout(resolve, 50));
+        for (const soundType of soundsToStart) {
+            this.engine.fadeSoundVolume(soundType, preset.sounds[soundType], TRANSITION_DURATION);
+        }
+
+        // After transition completes, clean up faded-out sounds
+        setTimeout(() => {
+            for (const soundType of soundsToFadeOut) {
+                this.engine.stop(soundType);
+                this.activeSounds.delete(soundType);
+                const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
+                if (card) {
+                    card.classList.remove('active');
+                    this.removeVolumeSlider(card);
+                }
+            }
+            this.updateNowPlayingDisplay();
+            this.isTransitioning = false;
+        }, TRANSITION_DURATION + 100);
     }
 
     confirmDeletePreset(presetId) {

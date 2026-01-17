@@ -646,6 +646,39 @@ class SleepSoundEngine {
         }
     }
 
+    // Fade out a specific sound and then stop it
+    fadeOutAndStop(soundType, durationMs = 3000) {
+        return new Promise((resolve) => {
+            const sound = this.activeSounds.get(soundType);
+            if (sound && sound.gainNode) {
+                sound.gainNode.gain.linearRampToValueAtTime(
+                    0,
+                    this.audioContext.currentTime + (durationMs / 1000)
+                );
+                setTimeout(() => {
+                    this.stop(soundType);
+                    resolve();
+                }, durationMs);
+            } else {
+                resolve();
+            }
+        });
+    }
+
+    // Fade out all sounds and stop them
+    fadeOutAllAndStop(durationMs = 3000) {
+        const promises = [];
+        for (const soundType of this.activeSounds.keys()) {
+            promises.push(this.fadeOutAndStop(soundType, durationMs));
+        }
+        return Promise.all(promises);
+    }
+
+    // Get all currently playing sound types
+    getActiveSoundTypes() {
+        return Array.from(this.activeSounds.keys());
+    }
+
     // Get audio data for visualization
     getAnalyserData() {
         if (!this.analyser) {
