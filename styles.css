@@ -192,11 +192,55 @@ h1 {
     border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
+/* Pause Button with Progress Ring */
+.pause-btn-container {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+
+.pause-progress-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 44px;
+    height: 44px;
+    transform: rotate(-90deg);
+}
+
+.pause-progress-bg {
+    fill: none;
+    stroke: var(--bg-card);
+    stroke-width: 2;
+}
+
+.pause-progress-fill {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 125.6; /* 2 * PI * 20 */
+    stroke-dashoffset: 125.6; /* Start empty */
+    transition: stroke-dashoffset 0.1s linear;
+}
+
+.pause-btn-container.transitioning .pause-progress-fill {
+    stroke: var(--accent-secondary);
+}
+
+.pause-btn-container.paused .pause-progress-fill {
+    stroke: var(--success);
+}
+
 .now-playing-bar .pause-btn {
+    position: absolute;
+    top: 2px;
+    left: 2px;
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 2px solid var(--accent-primary);
+    border: 2px solid transparent;
     background: transparent;
     color: var(--accent-secondary);
     font-size: 1rem;
@@ -205,26 +249,24 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
 }
 
 .now-playing-bar .pause-btn:hover:not(:disabled) {
-    background: var(--accent-primary);
+    background: rgba(124, 58, 237, 0.2);
     color: var(--text-primary);
 }
 
 .now-playing-bar .pause-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
-    border-color: var(--text-muted);
 }
 
 .now-playing-bar .pause-btn.paused {
-    border-color: var(--success);
+    color: var(--success);
 }
 
 .now-playing-bar .pause-btn.paused:hover:not(:disabled) {
-    background: var(--success);
+    background: rgba(16, 185, 129, 0.2);
 }
 
 .now-playing-bar .volume-control {
@@ -561,6 +603,7 @@ select:hover, select:focus {
 /* Preset Items (used in presets-row) */
 
 .preset-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -568,14 +611,44 @@ select:hover, select:focus {
     background: var(--bg-card);
     border-radius: var(--border-radius-sm);
     border: 1px solid rgba(124, 58, 237, 0.2);
-    transition: var(--transition);
+    transition: border-color 0.3s ease, background 0.3s ease;
     flex-shrink: 0;
     white-space: nowrap;
+    overflow: hidden;
 }
 
 .preset-item:hover {
     border-color: var(--accent-primary);
     background: var(--bg-card-hover);
+}
+
+/* Preset Progress Bar */
+.preset-progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 0%;
+    background: var(--accent-primary);
+    border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
+    transition: width 0.1s linear;
+}
+
+.preset-item.active {
+    border-color: var(--accent-primary);
+}
+
+.preset-item.active .preset-progress {
+    width: 100%;
+    background: var(--accent-secondary);
+}
+
+.preset-item.loading .preset-progress {
+    background: var(--accent-primary);
+}
+
+.preset-item.fading-out .preset-progress {
+    background: var(--text-muted);
 }
 
 .preset-info {

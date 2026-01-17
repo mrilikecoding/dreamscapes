@@ -34,9 +34,15 @@
                     <span id="currentSoundName"></span>
                 </div>
                 <div class="now-playing-bar">
-                    <button class="pause-btn" id="pauseBtn" disabled title="Pause/Resume">
-                        <span class="pause-icon" id="pauseIcon">⏸</span>
-                    </button>
+                    <div class="pause-btn-container">
+                        <svg class="pause-progress-ring" viewBox="0 0 44 44">
+                            <circle class="pause-progress-bg" cx="22" cy="22" r="20" />
+                            <circle class="pause-progress-fill" id="pauseProgressFill" cx="22" cy="22" r="20" />
+                        </svg>
+                        <button class="pause-btn" id="pauseBtn" disabled title="Pause/Resume">
+                            <span class="pause-icon" id="pauseIcon">⏸</span>
+                        </button>
+                    </div>
                     <div class="volume-control">
                         <span class="volume-icon">🔈</span>
                         <input type="range" id="volumeSlider" min="0" max="100" value="50">

@@ -21,6 +21,12 @@ class DreamscapeApp {
         this.isPaused = false;
         this.pausedVolumes = new Map(); // Store volumes before pausing
         this.isTransitioning = false; // Prevent overlapping transitions
+        this.activePresetId = null; // Currently loaded preset
+        this.transitionAnimationId = null; // For canceling animations
+        this.pauseAnimationId = null; // For pause ring animation
+        this.presetTransitionTimeout = null; // For canceling preset transition cleanup
+        this.pendingPresetCleanup = null; // Sounds to clean up after transition
+        this.interruptedPresetEl = null; // Preset element that was interrupted mid-load
 
         // Screensaver state
         this.screensaverActive = false;
@@ -398,8 +404,15 @@ class DreamscapeApp {
         // Update UI
         const pauseBtn = document.getElementById('pauseBtn');
         const pauseIcon = document.getElementById('pauseIcon');
+        const container = document.querySelector('.pause-btn-container');
         pauseBtn.classList.add('paused');
+        container.classList.add('paused', 'transitioning');
         pauseIcon.textContent = '▶';
+
+        // Animate the progress ring (filling up as sound fades out)
+        this.animatePauseRing(0, 100, TRANSITION_DURATION, () => {
+            container.classList.remove('transitioning');
+        });
     }
 
     resumeSounds() {
@@ -415,19 +428,99 @@ class DreamscapeApp {
         // Update UI
         const pauseBtn = document.getElementById('pauseBtn');
         const pauseIcon = document.getElementById('pauseIcon');
+        const container = document.querySelector('.pause-btn-container');
         pauseBtn.classList.remove('paused');
+        container.classList.remove('paused');
+        container.classList.add('transitioning');
         pauseIcon.textContent = '⏸';
+
+        // Animate the progress ring (emptying as sound fades in)
+        this.animatePauseRing(100, 0, TRANSITION_DURATION, () => {
+            container.classList.remove('transitioning');
+        });
+    }
+
+    // Animate the circular progress ring around pause button
+    animatePauseRing(fromPercent, toPercent, duration, onComplete) {
+        const ring = document.getElementById('pauseProgressFill');
+        if (!ring) return;
+
+        const circumference = 125.6; // 2 * PI * 20
+        const startOffset = circumference * (1 - fromPercent / 100);
+        const endOffset = circumference * (1 - toPercent / 100);
+        const startTime = Date.now();
+
+        // Cancel any existing animation
+        if (this.pauseAnimationId) {
+            cancelAnimationFrame(this.pauseAnimationId);
+        }
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const currentOffset = startOffset + (endOffset - startOffset) * progress;
+            ring.style.strokeDashoffset = currentOffset;
+
+            if (progress < 1) {
+                this.pauseAnimationId = requestAnimationFrame(animate);
+            } else {
+                this.pauseAnimationId = null;
+                if (onComplete) onComplete();
+            }
+        };
+
+        animate();
+    }
+
+    // Animate preset progress bar
+    animatePresetProgress(presetEl, fromPercent, toPercent, duration) {
+        const progressBar = presetEl.querySelector('.preset-progress');
+        if (!progressBar) return;
+
+        const startTime = Date.now();
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const currentWidth = fromPercent + (toPercent - fromPercent) * progress;
+            progressBar.style.width = `${currentWidth}%`;
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
     }
 
     updatePauseButtonState() {
         const pauseBtn = document.getElementById('pauseBtn');
+        const container = document.querySelector('.pause-btn-container');
+        const ring = document.getElementById('pauseProgressFill');
         pauseBtn.disabled = this.activeSounds.size === 0;
 
         // Reset pause state if no sounds
         if (this.activeSounds.size === 0) {
             this.isPaused = false;
             pauseBtn.classList.remove('paused');
+            if (container) {
+                container.classList.remove('paused', 'transitioning');
+            }
+            if (ring) {
+                ring.style.strokeDashoffset = '125.6'; // Reset to empty
+            }
             document.getElementById('pauseIcon').textContent = '⏸';
+
+            // Clear active preset when all sounds stop
+            if (this.activePresetId) {
+                const activePresetEl = document.querySelector(`.preset-item[data-preset-id="${this.activePresetId}"]`);
+                if (activePresetEl) {
+                    activePresetEl.classList.remove('active');
+                    const progressBar = activePresetEl.querySelector('.preset-progress');
+                    if (progressBar) progressBar.style.width = '0%';
+                }
+                this.activePresetId = null;
+            }
         }
     }
 
@@ -667,6 +760,19 @@ class DreamscapeApp {
         if (this.isTransitioning) return;
         this.isTransitioning = true;
 
+        // Clear active preset since random mix isn't a saved preset
+        if (this.activePresetId) {
+            const activePresetEl = document.querySelector(`.preset-item[data-preset-id="${this.activePresetId}"]`);
+            if (activePresetEl) {
+                activePresetEl.classList.remove('active');
+                const progressBar = activePresetEl.querySelector('.preset-progress');
+                if (progressBar) {
+                    this.animatePresetProgress(activePresetEl, 100, 0, TRANSITION_DURATION);
+                }
+            }
+            this.activePresetId = null;
+        }
+
         // Get currently playing sounds
         const currentSounds = this.engine.getActiveSoundTypes();
 
@@ -770,11 +876,87 @@ class DreamscapeApp {
     }
 
     async loadPreset(preset) {
-        // Prevent overlapping transitions
-        if (this.isTransitioning) return;
+        const newPresetId = preset.id;
+        const newPresetEl = document.querySelector(`.preset-item[data-preset-id="${newPresetId}"]`);
+
+        // If already transitioning, interrupt and clean up immediately
+        if (this.isTransitioning) {
+            // Cancel pending cleanup timeout
+            if (this.presetTransitionTimeout) {
+                clearTimeout(this.presetTransitionTimeout);
+                this.presetTransitionTimeout = null;
+            }
+
+            // Immediately clean up any sounds that were fading out
+            if (this.pendingPresetCleanup) {
+                for (const soundType of this.pendingPresetCleanup.soundsToStop) {
+                    // Only stop if volume is near zero (was fading out)
+                    if (this.engine.getSoundVolume(soundType) < 0.05) {
+                        this.engine.stop(soundType);
+                        this.activeSounds.delete(soundType);
+                        const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
+                        if (card) {
+                            card.classList.remove('active');
+                            this.removeVolumeSlider(card);
+                        }
+                    }
+                }
+
+                // Clean up visual states of interrupted presets
+                const interruptedEl = this.pendingPresetCleanup.loadingPresetEl;
+                if (interruptedEl && interruptedEl !== newPresetEl) {
+                    interruptedEl.classList.remove('loading', 'active');
+                    interruptedEl.classList.add('fading-out');
+                    // Animate the interrupted preset's bar back down from its current position
+                    const interruptedProgressBar = interruptedEl.querySelector('.preset-progress');
+                    const currentProgress = interruptedProgressBar ? parseFloat(interruptedProgressBar.style.width) || 0 : 0;
+                    if (currentProgress > 0) {
+                        this.animatePresetProgress(interruptedEl, currentProgress, 0, TRANSITION_DURATION);
+                    }
+                    // Track for cleanup after this transition completes
+                    this.interruptedPresetEl = interruptedEl;
+                }
+                const fadingEl = this.pendingPresetCleanup.fadingPresetEl;
+                if (fadingEl && fadingEl !== newPresetEl) {
+                    fadingEl.classList.remove('fading-out');
+                }
+            }
+        } else {
+            // Not interrupting, clear any previous interrupted element
+            this.interruptedPresetEl = null;
+        }
+
         this.isTransitioning = true;
 
-        // Get currently playing sounds to fade out
+        // Get the old preset element (could be actively loading or already active)
+        const oldPresetId = this.activePresetId;
+        const oldPresetEl = oldPresetId ? document.querySelector(`.preset-item[data-preset-id="${oldPresetId}"]`) : null;
+
+        // Get current progress bar positions for smooth continuation
+        let oldPresetProgress = 100;
+        let newPresetProgress = 0;
+
+        if (oldPresetEl && oldPresetId !== newPresetId) {
+            const oldProgressBar = oldPresetEl.querySelector('.preset-progress');
+            if (oldProgressBar) {
+                oldPresetProgress = parseFloat(oldProgressBar.style.width) || 100;
+            }
+            oldPresetEl.classList.add('fading-out');
+            oldPresetEl.classList.remove('active', 'loading');
+            this.animatePresetProgress(oldPresetEl, oldPresetProgress, 0, TRANSITION_DURATION);
+        }
+
+        if (newPresetEl) {
+            const newProgressBar = newPresetEl.querySelector('.preset-progress');
+            if (newProgressBar) {
+                newPresetProgress = parseFloat(newProgressBar.style.width) || 0;
+            }
+            newPresetEl.classList.add('loading');
+            newPresetEl.classList.remove('fading-out');
+            this.animatePresetProgress(newPresetEl, newPresetProgress, 100, TRANSITION_DURATION);
+        }
+
+        // Get currently playing sounds (includes any mid-fade sounds)
         const currentSounds = this.engine.getActiveSoundTypes();
         const newSoundTypes = Object.keys(preset.sounds);
 
@@ -798,6 +980,7 @@ class DreamscapeApp {
         this.updateFadeoutControlState();
 
         // Start fading out sounds that won't be in the new mix
+        // Audio engine's fadeSoundVolume will start from current volume automatically
         const soundsToFadeOut = currentSounds.filter(s => !newSoundTypes.includes(s));
         for (const soundType of soundsToFadeOut) {
             this.engine.fadeSoundVolume(soundType, 0, TRANSITION_DURATION);
@@ -833,8 +1016,16 @@ class DreamscapeApp {
             this.engine.fadeSoundVolume(soundType, preset.sounds[soundType], TRANSITION_DURATION);
         }
 
-        // After transition completes, clean up faded-out sounds
-        setTimeout(() => {
+        // Store cleanup info in case we get interrupted
+        this.pendingPresetCleanup = {
+            soundsToStop: soundsToFadeOut,
+            loadingPresetEl: newPresetEl,
+            fadingPresetEl: oldPresetEl,
+            interruptedPresetEl: null // Will be set if we interrupt another transition
+        };
+
+        // After transition completes, clean up faded-out sounds and update preset states
+        this.presetTransitionTimeout = setTimeout(() => {
             for (const soundType of soundsToFadeOut) {
                 this.engine.stop(soundType);
                 this.activeSounds.delete(soundType);
@@ -846,6 +1037,23 @@ class DreamscapeApp {
             }
             this.updateNowPlayingDisplay();
             this.isTransitioning = false;
+            this.pendingPresetCleanup = null;
+            this.presetTransitionTimeout = null;
+
+            // Update preset visual states
+            if (oldPresetEl) {
+                oldPresetEl.classList.remove('fading-out');
+            }
+            if (newPresetEl) {
+                newPresetEl.classList.remove('loading');
+                newPresetEl.classList.add('active');
+            }
+            // Clean up any interrupted preset from a previous transition
+            if (this.interruptedPresetEl) {
+                this.interruptedPresetEl.classList.remove('fading-out');
+                this.interruptedPresetEl = null;
+            }
+            this.activePresetId = newPresetId;
         }, TRANSITION_DURATION + 100);
     }
 
@@ -889,6 +1097,12 @@ class DreamscapeApp {
         presets.forEach(preset => {
             const item = document.createElement('div');
             item.className = 'preset-item';
+            item.dataset.presetId = preset.id;
+
+            // Mark as active if this preset is currently loaded
+            if (this.activePresetId === preset.id) {
+                item.classList.add('active');
+            }
 
             const soundCount = Object.keys(preset.sounds).length;
             const soundNames = Object.keys(preset.sounds)
@@ -908,6 +1122,7 @@ class DreamscapeApp {
             }
 
             item.innerHTML = `
+                <div class="preset-progress"></div>
                 <div class="preset-info">
                     <span class="preset-name">${this.escapeHtml(preset.name)}</span>
                     <span class="preset-details">${soundCount} sound${soundCount !== 1 ? 's' : ''}: ${soundNames}${timerInfo}</span>
