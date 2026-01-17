@@ -37,21 +37,24 @@ class SleepSoundEngine {
     setVolume(value) {
         this.volume = value;
         if (this.masterGain) {
-            // Smooth volume transition
-            this.masterGain.gain.linearRampToValueAtTime(
-                value,
-                this.audioContext.currentTime + 0.1
-            );
+            const currentTime = this.audioContext.currentTime;
+            const currentValue = this.masterGain.gain.value;
+            // Cancel any scheduled changes, set current value, then ramp
+            this.masterGain.gain.cancelScheduledValues(currentTime);
+            this.masterGain.gain.setValueAtTime(currentValue, currentTime);
+            this.masterGain.gain.linearRampToValueAtTime(value, currentTime + 0.1);
         }
     }
 
     setSoundVolume(soundType, value) {
         const sound = this.activeSounds.get(soundType);
         if (sound && sound.gainNode) {
-            sound.gainNode.gain.linearRampToValueAtTime(
-                value,
-                this.audioContext.currentTime + 0.1
-            );
+            const currentTime = this.audioContext.currentTime;
+            const currentValue = sound.gainNode.gain.value;
+            // Cancel any scheduled changes, set current value, then ramp
+            sound.gainNode.gain.cancelScheduledValues(currentTime);
+            sound.gainNode.gain.setValueAtTime(currentValue, currentTime);
+            sound.gainNode.gain.linearRampToValueAtTime(value, currentTime + 0.1);
         }
     }
 
@@ -639,9 +642,16 @@ class SleepSoundEngine {
     fadeSoundVolume(soundType, targetVolume, durationMs = 300) {
         const sound = this.activeSounds.get(soundType);
         if (sound && sound.gainNode) {
+            const currentTime = this.audioContext.currentTime;
+            const currentValue = sound.gainNode.gain.value;
+            // Cancel any scheduled changes to avoid conflicts
+            sound.gainNode.gain.cancelScheduledValues(currentTime);
+            // Set current value as starting point (required for ramp to work properly)
+            sound.gainNode.gain.setValueAtTime(currentValue, currentTime);
+            // Now ramp to target
             sound.gainNode.gain.linearRampToValueAtTime(
                 targetVolume,
-                this.audioContext.currentTime + (durationMs / 1000)
+                currentTime + (durationMs / 1000)
             );
         }
     }
@@ -651,9 +661,16 @@ class SleepSoundEngine {
         return new Promise((resolve) => {
             const sound = this.activeSounds.get(soundType);
             if (sound && sound.gainNode) {
+                const currentTime = this.audioContext.currentTime;
+                const currentValue = sound.gainNode.gain.value;
+                // Cancel any scheduled changes to avoid conflicts
+                sound.gainNode.gain.cancelScheduledValues(currentTime);
+                // Set current value as starting point (required for ramp to work properly)
+                sound.gainNode.gain.setValueAtTime(currentValue, currentTime);
+                // Now ramp to zero
                 sound.gainNode.gain.linearRampToValueAtTime(
                     0,
-                    this.audioContext.currentTime + (durationMs / 1000)
+                    currentTime + (durationMs / 1000)
                 );
                 setTimeout(() => {
                     this.stop(soundType);

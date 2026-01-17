@@ -121,10 +121,8 @@ class DreamscapeApp {
             return;
         }
 
-        // Add this sound to the mix with gentle fade-in
+        // Add this sound to the mix - starts at volume 0, user adjusts slider
         await this.playSound(soundType, card);
-        // Fade in to default volume over transition duration
-        this.engine.fadeSoundVolume(soundType, 1.0, TRANSITION_DURATION);
     }
 
     fadeOutAndRemoveSound(soundType, card) {
@@ -227,7 +225,7 @@ class DreamscapeApp {
                 c.classList.remove('active');
                 this.removeVolumeSlider(c);
             });
-            document.getElementById('currentSoundName').textContent = 'Select a sound';
+            document.getElementById('currentSoundName').textContent = '';
             document.getElementById('nowPlaying').classList.remove('playing');
 
             // Switch to idle animation
@@ -245,7 +243,7 @@ class DreamscapeApp {
     updateNowPlayingDisplay() {
         const displayEl = document.getElementById('currentSoundName');
         if (this.activeSounds.size === 0) {
-            displayEl.textContent = 'Select a sound';
+            displayEl.textContent = '';
         } else {
             // Show comma-separated list of active sound names
             const names = Array.from(this.activeSounds).map(type => this.soundNames[type]);
@@ -392,9 +390,9 @@ class DreamscapeApp {
         // Store master volume
         this.pausedMasterVolume = this.engine.volume;
 
-        // Fade out all sounds over 10 seconds to avoid startle reflex
+        // Fade out all sounds over TRANSITION_DURATION to avoid startle reflex
         this.activeSounds.forEach(soundType => {
-            this.engine.fadeSoundVolume(soundType, 0, 10000);
+            this.engine.fadeSoundVolume(soundType, 0, TRANSITION_DURATION);
         });
 
         // Update UI
@@ -409,9 +407,9 @@ class DreamscapeApp {
 
         this.isPaused = false;
 
-        // Fade in all sounds to their stored volumes over 10 seconds
+        // Fade in all sounds to their stored volumes over TRANSITION_DURATION
         this.pausedVolumes.forEach((volume, soundType) => {
-            this.engine.fadeSoundVolume(soundType, volume, 10000);
+            this.engine.fadeSoundVolume(soundType, volume, TRANSITION_DURATION);
         });
 
         // Update UI
@@ -868,6 +866,7 @@ class DreamscapeApp {
 
     renderPresetsList() {
         const container = document.getElementById('presetsList');
+        const presetsRow = container.closest('.presets-row');
         const emptyMsg = document.getElementById('presetsEmpty');
         const presets = this.getPresets();
 
@@ -875,10 +874,13 @@ class DreamscapeApp {
         container.querySelectorAll('.preset-item').forEach(el => el.remove());
 
         if (presets.length === 0) {
-            emptyMsg.style.display = 'block';
+            // Hide the entire presets row when empty
+            if (presetsRow) presetsRow.style.display = 'none';
             return;
         }
 
+        // Show presets row when there are presets
+        if (presetsRow) presetsRow.style.display = '';
         emptyMsg.style.display = 'none';
 
         // Sort by most recent first

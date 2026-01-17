@@ -19,95 +19,93 @@
             <p class="tagline">Science-backed sounds for peaceful sleep</p>
         </header>
 
+        <div class="quick-start">
+            <p class="safety-note">Place device away from baby. Keep volume at conversational level (~50-60 dB).</p>
+            <p class="usage-hint">Tap sounds to mix them together. Drag each slider to adjust the blend.</p>
+        </div>
+
         <main>
+            <!-- Now Playing Visualizer -->
             <div class="now-playing" id="nowPlaying">
                 <div class="visualizer" id="visualizer">
                     <canvas id="visualizerCanvas"></canvas>
                 </div>
                 <div class="current-sound">
-                    <span id="currentSoundName">Select a sound</span>
+                    <span id="currentSoundName"></span>
                 </div>
-            </div>
-
-            <div class="controls">
-                <button class="pause-btn" id="pauseBtn" disabled title="Pause/Resume sounds">
-                    <span class="pause-icon" id="pauseIcon">⏸</span>
-                </button>
-
-                <div class="volume-control">
-                    <span class="volume-icon">🔈</span>
-                    <input type="range" id="volumeSlider" min="0" max="100" value="50">
-                    <span class="volume-icon">🔊</span>
-                </div>
-
-                <div class="timer-panel">
+                <div class="now-playing-bar">
+                    <button class="pause-btn" id="pauseBtn" disabled title="Pause/Resume">
+                        <span class="pause-icon" id="pauseIcon">⏸</span>
+                    </button>
+                    <div class="volume-control">
+                        <span class="volume-icon">🔈</span>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="50">
+                        <span class="volume-icon">🔊</span>
+                    </div>
                     <div class="timer-control">
-                        <label for="timerSelect">Sleep Timer:</label>
+                        <label>Timer:</label>
                         <select id="timerSelect">
-                            <option value="0">No timer</option>
-                            <option value="15">15 minutes</option>
-                            <option value="30">30 minutes</option>
-                            <option value="45">45 minutes</option>
-                            <option value="60">1 hour</option>
-                            <option value="120">2 hours</option>
+                            <option value="0">Off</option>
+                            <option value="15">15m</option>
+                            <option value="30">30m</option>
+                            <option value="45">45m</option>
+                            <option value="60">1h</option>
+                            <option value="120">2h</option>
                         </select>
                         <span id="timerDisplay" class="timer-display"></span>
                     </div>
-
                     <div class="fadeout-control disabled" id="fadeoutControl">
                         <label class="toggle-label">
                             <input type="checkbox" id="fadeoutToggle" checked disabled>
                             <span class="toggle-switch"></span>
-                            <span>Fade out</span>
+                            <span>Fade</span>
                         </label>
                         <select id="fadeoutDuration" disabled>
-                            <option value="10">10 sec</option>
-                            <option value="30">30 sec</option>
-                            <option value="60" selected>1 min</option>
-                            <option value="120">2 min</option>
-                            <option value="300">5 min</option>
-                            <option value="600">10 min</option>
-                            <option value="900">15 min</option>
-                            <option value="1800">30 min</option>
+                            <option value="60" selected>1m</option>
+                            <option value="120">2m</option>
+                            <option value="300">5m</option>
+                            <option value="600">10m</option>
                         </select>
                     </div>
-
-                    <p class="controls-hint" id="controlsHint">Set a timer to enable gradual fade-out. Volume will smoothly decrease over your chosen duration before stopping.</p>
-                </div>
-
-                <div class="screensaver-control">
-                    <select id="screensaverMode">
-                        <option value="stars">Stars</option>
-                        <option value="aurora">Aurora</option>
-                        <option value="fireflies">Fireflies</option>
-                        <option value="nebula">Nebula</option>
-                    </select>
-                    <button class="screensaver-btn" id="screensaverBtn" title="Enter screensaver mode">
-                        <span>🌙 Screensaver</span>
-                    </button>
+                    <div class="screensaver-control">
+                        <select id="screensaverMode" title="Screensaver style">
+                            <option value="stars">✨ Stars</option>
+                            <option value="aurora">🌌 Aurora</option>
+                            <option value="fireflies">🪲 Fireflies</option>
+                            <option value="nebula">💫 Nebula</option>
+                        </select>
+                        <button class="screensaver-btn" id="screensaverBtn" title="Enter screensaver">
+                            <span>🌙</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <section class="presets-section">
-                <div class="presets-header">
-                    <h2>My Presets</h2>
-                    <div class="presets-actions">
-                        <button class="random-mix-btn" id="randomMixBtn" title="Generate a random sound mix">
+            <!-- Sound Selection Zone -->
+            <section class="sound-selection">
+                <div class="sound-selection-header">
+                    <h2>Choose Your Sounds</h2>
+                    <div class="sound-actions">
+                        <button class="action-btn" id="randomMixBtn" title="Generate a random sound mix">
                             <span class="btn-icon">🎲</span>
-                            <span>Random Mix</span>
+                            <span>Random</span>
                         </button>
-                        <button class="save-preset-btn" id="savePresetBtn" title="Save current mix as preset">
-                            <span class="btn-icon">+</span>
-                            <span>Save Preset</span>
+                        <button class="action-btn" id="savePresetBtn" title="Save current mix as preset">
+                            <span class="btn-icon">💾</span>
+                            <span>Save</span>
                         </button>
                     </div>
                 </div>
-                <div class="presets-list" id="presetsList">
-                    <p class="presets-empty" id="presetsEmpty">No saved presets yet. Create a mix and save it!</p>
-                </div>
-            </section>
 
-            <div class="sound-grid">
+                <!-- Presets -->
+                <div class="presets-row">
+                    <span class="presets-label">Presets:</span>
+                    <div class="presets-list" id="presetsList">
+                        <p class="presets-empty" id="presetsEmpty">None saved</p>
+                    </div>
+                </div>
+
+                <div class="sound-grid">
                 <div class="sound-category">
                     <h2>🔬 Noise Types</h2>
                     <p class="category-info">Scientifically studied sound spectrums</p>
@@ -191,7 +189,8 @@
                         </button>
                     </div>
                 </div>
-            </div>
+                </div>
+            </section>
 
             <section class="research-section">
                 <h2>The Science of Sleep Sounds</h2>
@@ -263,7 +262,6 @@
         <footer>
             <p>Made with 💜 for peaceful sleep by <a href="https://nate.green" target="_blank" rel="noopener">n8green</a></p>
             <p class="github-line"><a href="https://github.com/mrilikecoding" target="_blank" rel="noopener" title="GitHub" class="github-link"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg></a></p>
-            <p class="disclaimer">Always place device away from baby. Recommended volume: conversational level (~50-60 dB).</p>
             <p class="dedication">For Rayna</p>
         </footer>
     </div>
