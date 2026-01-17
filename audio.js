@@ -55,6 +55,14 @@ class SleepSoundEngine {
         }
     }
 
+    getSoundVolume(soundType) {
+        const sound = this.activeSounds.get(soundType);
+        if (sound && sound.gainNode) {
+            return sound.gainNode.gain.value;
+        }
+        return 1.0; // Default volume
+    }
+
     stop(soundType = null) {
         if (soundType) {
             // Stop specific sound
@@ -608,8 +616,9 @@ class SleepSoundEngine {
         source.loop = true;
 
         // Create per-sound gain node for individual volume control
+        // Start at 0 to allow fade-in and prevent audio pops
         const gainNode = this.audioContext.createGain();
-        gainNode.gain.value = 1.0;
+        gainNode.gain.value = 0;
 
         source.connect(gainNode);
         gainNode.connect(this.masterGain);
@@ -624,6 +633,17 @@ class SleepSoundEngine {
                 gainNode.disconnect();
             }
         };
+    }
+
+    // Fade sound volume from current level to target over duration
+    fadeSoundVolume(soundType, targetVolume, durationMs = 300) {
+        const sound = this.activeSounds.get(soundType);
+        if (sound && sound.gainNode) {
+            sound.gainNode.gain.linearRampToValueAtTime(
+                targetVolume,
+                this.audioContext.currentTime + (durationMs / 1000)
+            );
+        }
     }
 
     // Get audio data for visualization

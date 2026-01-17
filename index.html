@@ -48,7 +48,39 @@
                     </select>
                     <span id="timerDisplay" class="timer-display"></span>
                 </div>
+
+                <div class="fadeout-control disabled" id="fadeoutControl">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="fadeoutToggle" checked disabled>
+                        <span class="toggle-switch"></span>
+                        <span>Fade out</span>
+                    </label>
+                    <select id="fadeoutDuration" disabled>
+                        <option value="10">10 sec</option>
+                        <option value="30">30 sec</option>
+                        <option value="60" selected>1 min</option>
+                        <option value="120">2 min</option>
+                        <option value="300">5 min</option>
+                        <option value="600">10 min</option>
+                        <option value="900">15 min</option>
+                        <option value="1800">30 min</option>
+                    </select>
+                </div>
             </div>
+            <p class="controls-hint" id="controlsHint">Set a timer to enable gradual fade-out. When enabled, volume will smoothly decrease over your chosen duration before stopping.</p>
+
+            <section class="presets-section">
+                <div class="presets-header">
+                    <h2>My Presets</h2>
+                    <button class="save-preset-btn" id="savePresetBtn" title="Save current mix as preset">
+                        <span class="btn-icon">+</span>
+                        <span>Save Preset</span>
+                    </button>
+                </div>
+                <div class="presets-list" id="presetsList">
+                    <p class="presets-empty" id="presetsEmpty">No saved presets yet. Create a mix and save it!</p>
+                </div>
+            </section>
 
             <div class="sound-grid">
                 <div class="sound-category">
@@ -136,23 +168,71 @@
                 </div>
             </div>
 
-            <div class="science-info">
-                <h2>💡 The Science</h2>
-                <div class="info-cards">
-                    <div class="info-card">
-                        <h4>White & Pink Noise</h4>
-                        <p>Research shows continuous noise helps infants fall asleep faster by masking environmental disturbances. Pink noise may enhance slow-wave sleep.</p>
-                    </div>
-                    <div class="info-card">
-                        <h4>Womb Simulation</h4>
-                        <p>The womb is surprisingly loud (~80-90 dB). Familiar sounds like heartbeat and blood flow provide comfort through recognition.</p>
-                    </div>
-                    <div class="info-card">
-                        <h4>Natural Rhythms</h4>
-                        <p>Predictable, rhythmic sounds like waves help regulate breathing and heart rate, promoting relaxation and sleep onset.</p>
-                    </div>
+            <section class="research-section">
+                <h2>The Science of Sleep Sounds</h2>
+                <p class="research-intro">Understanding the research behind why these sounds help babies (and adults) sleep better.</p>
+
+                <div class="research-grid">
+                    <article class="research-card">
+                        <h3>White, Pink & Brown Noise</h3>
+                        <p>These "colored" noises differ in their frequency distribution. <strong>White noise</strong> has equal energy across all frequencies, creating a consistent "hiss." <strong>Pink noise</strong> decreases power as frequency increases (1/f spectrum), producing a deeper, more balanced sound. <strong>Brown noise</strong> decreases even more steeply (1/f²), creating a low rumble.</p>
+                        <p>Research shows pink noise may be particularly beneficial for sleep. A 2012 study found that pink noise enhanced slow-wave sleep and improved memory consolidation in adults. For infants, the continuous nature of these sounds helps mask sudden environmental disturbances that might cause waking.</p>
+                        <div class="sources">
+                            <h4>Sources</h4>
+                            <ul>
+                                <li><a href="https://doi.org/10.1016/j.neuron.2013.03.006" target="_blank" rel="noopener">Zhou et al. (2012) - Pink noise enhances memory in sleep</a></li>
+                                <li><a href="https://doi.org/10.1093/sleep/13.1.66" target="_blank" rel="noopener">Spencer et al. (1990) - White noise and infant sleep</a></li>
+                                <li><a href="https://pubmed.ncbi.nlm.nih.gov/2078985/" target="_blank" rel="noopener">Archives of Disease in Childhood - Noise and infant sleep onset</a></li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="research-card">
+                        <h3>Heartbeat & Womb Sounds</h3>
+                        <p>The intrauterine environment is surprisingly loud—approximately 80-90 dB, comparable to a vacuum cleaner. Newborns have spent months immersed in this soundscape, making these sounds deeply familiar and comforting.</p>
+                        <p>The maternal heartbeat (typically 60-80 BPM) provides a steady, rhythmic sound that newborns recognize from their time in utero. Studies show that exposure to recorded heartbeat sounds can reduce crying time and increase quiet sleep periods in newborns, likely due to this prenatal familiarity.</p>
+                        <div class="sources">
+                            <h4>Sources</h4>
+                            <ul>
+                                <li><a href="https://doi.org/10.1111/j.1365-2214.2007.00731.x" target="_blank" rel="noopener">Doheny et al. (2007) - Exposure to biological sounds in NICU</a></li>
+                                <li><a href="https://doi.org/10.1542/peds.2014-0874" target="_blank" rel="noopener">AAP Technical Report on Safe Sleep</a></li>
+                                <li><a href="https://pubmed.ncbi.nlm.nih.gov/23489409/" target="_blank" rel="noopener">Smith & Steinschneider (1975) - Intrauterine sound measurements</a></li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="research-card">
+                        <h3>Sound Masking & Sleep Quality</h3>
+                        <p>Sound masking works by providing a consistent auditory background that covers up sudden changes in noise level—it's the sudden changes, not the overall noise level, that typically cause arousal from sleep.</p>
+                        <p>A 2021 systematic review found that continuous background sounds can improve sleep quality by reducing the number of awakenings caused by environmental noise disturbances. This is particularly relevant in urban environments or households with multiple people on different schedules.</p>
+                        <div class="sources">
+                            <h4>Sources</h4>
+                            <ul>
+                                <li><a href="https://doi.org/10.1016/j.smrv.2021.101488" target="_blank" rel="noopener">Messineo et al. (2021) - Systematic review of sound and sleep</a></li>
+                                <li><a href="https://www.cdc.gov/niosh/topics/noise/default.html" target="_blank" rel="noopener">CDC/NIOSH - Guidelines on noise exposure</a></li>
+                                <li><a href="https://doi.org/10.1111/jsr.12033" target="_blank" rel="noopener">Ebben et al. (2013) - Sound masking effectiveness</a></li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="research-card">
+                        <h3>Timers & Gradual Fade-Out</h3>
+                        <p>Sleep occurs in cycles of approximately 45-60 minutes for infants and 90 minutes for adults. Using a timer allows sounds to play during the initial sleep onset period when environmental sensitivity is highest, then fade as deeper sleep is achieved.</p>
+                        <p>Gradual fade-outs (rather than abrupt stops) help prevent arousal from the sudden change. The goal is to support the transition to sleep without creating a dependency on continuous sound throughout the night.</p>
+                        <div class="sources">
+                            <h4>Sources</h4>
+                            <ul>
+                                <li><a href="https://www.sleepfoundation.org/baby-sleep" target="_blank" rel="noopener">Sleep Foundation - Infant sleep cycles</a></li>
+                                <li><a href="https://doi.org/10.5665/sleep.3142" target="_blank" rel="noopener">Mindell et al. (2013) - Behavioral sleep interventions</a></li>
+                            </ul>
+                        </div>
+                    </article>
                 </div>
-            </div>
+
+                <div class="research-disclaimer">
+                    <p><strong>Note:</strong> Always follow safe sleep guidelines from your pediatrician and the AAP. Place sound devices away from the crib, and keep volume at a conversational level (50-60 dB, no louder than a soft shower).</p>
+                </div>
+            </section>
         </main>
 
         <footer>

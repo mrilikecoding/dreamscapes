@@ -33,6 +33,8 @@ class DreamscapeApp {
     init() {
         this.setupCanvas();
         this.setupEventListeners();
+        this.setupPresetListeners();
+        this.renderPresetsList();
         this.startIdleAnimation();
     }
 
@@ -68,6 +70,14 @@ class DreamscapeApp {
         const timerSelect = document.getElementById('timerSelect');
         timerSelect.addEventListener('change', (e) => {
             this.setTimer(parseInt(e.target.value));
+            this.updateFadeoutControlState();
+        });
+
+        // Fade-out toggle - enable/disable duration select
+        const fadeoutToggle = document.getElementById('fadeoutToggle');
+        const fadeoutDuration = document.getElementById('fadeoutDuration');
+        fadeoutToggle.addEventListener('change', (e) => {
+            fadeoutDuration.disabled = !e.target.checked;
         });
 
         // Handle page visibility change to save battery
@@ -185,7 +195,7 @@ class DreamscapeApp {
         slider.className = 'sound-volume-slider';
         slider.min = 0;
         slider.max = 100;
-        slider.value = 100;
+        slider.value = 0;  // Start at 0 - user drags up to desired level
         slider.setAttribute('aria-label', `Volume for ${this.soundNames[soundType]}`);
 
         slider.addEventListener('input', (e) => {
@@ -233,6 +243,7 @@ class DreamscapeApp {
         }
         this.timerRemaining = 0;
         document.getElementById('timerDisplay').textContent = '';
+        this.updateFadeoutControlState();
     }
 
     updateTimerDisplay() {
@@ -242,9 +253,38 @@ class DreamscapeApp {
         document.getElementById('timerDisplay').textContent = display;
     }
 
+    updateFadeoutControlState() {
+        const timerValue = parseInt(document.getElementById('timerSelect').value);
+        const fadeoutControl = document.getElementById('fadeoutControl');
+        const fadeoutToggle = document.getElementById('fadeoutToggle');
+        const fadeoutDuration = document.getElementById('fadeoutDuration');
+        const hasTimer = timerValue > 0;
+
+        if (hasTimer) {
+            fadeoutControl.classList.remove('disabled');
+            fadeoutToggle.disabled = false;
+            fadeoutDuration.disabled = !fadeoutToggle.checked;
+        } else {
+            fadeoutControl.classList.add('disabled');
+            fadeoutToggle.disabled = true;
+            fadeoutDuration.disabled = true;
+        }
+    }
+
     fadeOutAndStop() {
-        const fadeDuration = 10000; // 10 second fade
+        const fadeEnabled = document.getElementById('fadeoutToggle').checked;
         const startVolume = this.engine.volume;
+
+        if (!fadeEnabled) {
+            // Immediate stop
+            this.stopSound();
+            document.getElementById('timerSelect').value = '0';
+            return;
+        }
+
+        // Gradual fade
+        const fadeDurationSec = parseInt(document.getElementById('fadeoutDuration').value);
+        const fadeDuration = fadeDurationSec * 1000;
         const startTime = Date.now();
 
         const fadeInterval = setInterval(() => {
@@ -432,6 +472,217 @@ class DreamscapeApp {
             this.ctx.arc(x, y, size, 0, Math.PI * 2);
             this.ctx.fill();
         }
+    }
+
+    // ==========================================
+    // Preset Management
+    // ==========================================
+
+    setupPresetListeners() {
+        const saveBtn = document.getElementById('savePresetBtn');
+        saveBtn.addEventListener('click', () => this.promptSavePreset());
+
+        // Delegate click events for preset items
+        const presetsList = document.getElementById('presetsList');
+        presetsList.addEventListener('click', (e) => {
+            const loadBtn = e.target.closest('.preset-load-btn');
+            const deleteBtn = e.target.closest('.preset-delete-btn');
+
+            if (loadBtn) {
+                const presetId = loadBtn.dataset.presetId;
+                this.loadPresetById(presetId);
+            } else if (deleteBtn) {
+                const presetId = deleteBtn.dataset.presetId;
+                this.confirmDeletePreset(presetId);
+            }
+        });
+    }
+
+    getPresets() {
+        const stored = localStorage.getItem('dreamscape_presets');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    savePresetsToStorage(presets) {
+        localStorage.setItem('dreamscape_presets', JSON.stringify(presets));
+    }
+
+    getCurrentMixState() {
+        const sounds = {};
+        this.activeSounds.forEach(soundType => {
+            const volume = this.engine.getSoundVolume(soundType);
+            sounds[soundType] = volume;
+        });
+        return {
+            sounds,
+            masterVolume: this.engine.volume,
+            timer: parseInt(document.getElementById('timerSelect').value),
+            fadeoutEnabled: document.getElementById('fadeoutToggle').checked,
+            fadeoutDuration: parseInt(document.getElementById('fadeoutDuration').value)
+        };
+    }
+
+    promptSavePreset() {
+        if (this.activeSounds.size === 0) {
+            alert('Please play at least one sound before saving a preset.');
+            return;
+        }
+
+        const name = prompt('Enter a name for this preset:');
+        if (name && name.trim()) {
+            this.savePreset(name.trim());
+        }
+    }
+
+    savePreset(name) {
+        const mixState = this.getCurrentMixState();
+        const preset = {
+            id: `preset_${Date.now()}`,
+            name,
+            sounds: mixState.sounds,
+            masterVolume: mixState.masterVolume,
+            timer: mixState.timer,
+            fadeoutEnabled: mixState.fadeoutEnabled,
+            fadeoutDuration: mixState.fadeoutDuration,
+            createdAt: Date.now()
+        };
+
+        const presets = this.getPresets();
+        presets.push(preset);
+        this.savePresetsToStorage(presets);
+        this.renderPresetsList();
+    }
+
+    loadPresetById(presetId) {
+        const presets = this.getPresets();
+        const preset = presets.find(p => p.id === presetId);
+        if (preset) {
+            this.loadPreset(preset);
+        }
+    }
+
+    async loadPreset(preset) {
+        // Stop all current sounds first
+        this.stopSound();
+
+        // Set master volume
+        this.engine.setVolume(preset.masterVolume);
+        document.getElementById('volumeSlider').value = preset.masterVolume * 100;
+
+        // Restore timer settings (with backwards compatibility for old presets)
+        if (preset.timer !== undefined) {
+            document.getElementById('timerSelect').value = preset.timer;
+            this.setTimer(preset.timer);
+        }
+
+        // Restore fade-out settings (with backwards compatibility)
+        if (preset.fadeoutEnabled !== undefined) {
+            document.getElementById('fadeoutToggle').checked = preset.fadeoutEnabled;
+        }
+        if (preset.fadeoutDuration !== undefined) {
+            document.getElementById('fadeoutDuration').value = preset.fadeoutDuration;
+        }
+        this.updateFadeoutControlState();
+
+        // Play each sound (starts at volume 0)
+        for (const [soundType, volume] of Object.entries(preset.sounds)) {
+            const card = document.querySelector(`.sound-card[data-sound="${soundType}"]`);
+            if (card) {
+                await this.playSound(soundType, card);
+                // Update the slider to target volume
+                const slider = card.querySelector('.sound-volume-slider');
+                if (slider) {
+                    slider.value = volume * 100;
+                }
+            }
+        }
+
+        // Small delay to ensure all sounds are playing, then fade in together
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Fade all sounds to their target volumes smoothly
+        for (const [soundType, volume] of Object.entries(preset.sounds)) {
+            this.engine.fadeSoundVolume(soundType, volume, 400);
+        }
+    }
+
+    confirmDeletePreset(presetId) {
+        const presets = this.getPresets();
+        const preset = presets.find(p => p.id === presetId);
+        if (preset && confirm(`Delete preset "${preset.name}"?`)) {
+            this.deletePreset(presetId);
+        }
+    }
+
+    deletePreset(presetId) {
+        const presets = this.getPresets();
+        const filtered = presets.filter(p => p.id !== presetId);
+        this.savePresetsToStorage(filtered);
+        this.renderPresetsList();
+    }
+
+    renderPresetsList() {
+        const container = document.getElementById('presetsList');
+        const emptyMsg = document.getElementById('presetsEmpty');
+        const presets = this.getPresets();
+
+        // Clear existing preset items (but keep the empty message element)
+        container.querySelectorAll('.preset-item').forEach(el => el.remove());
+
+        if (presets.length === 0) {
+            emptyMsg.style.display = 'block';
+            return;
+        }
+
+        emptyMsg.style.display = 'none';
+
+        // Sort by most recent first
+        presets.sort((a, b) => b.createdAt - a.createdAt);
+
+        presets.forEach(preset => {
+            const item = document.createElement('div');
+            item.className = 'preset-item';
+
+            const soundCount = Object.keys(preset.sounds).length;
+            const soundNames = Object.keys(preset.sounds)
+                .map(type => this.soundNames[type])
+                .join(', ');
+
+            // Build timer info string
+            let timerInfo = '';
+            if (preset.timer && preset.timer > 0) {
+                const timerMins = preset.timer >= 60 ? `${preset.timer / 60}h` : `${preset.timer}m`;
+                timerInfo = ` · ${timerMins} timer`;
+                if (preset.fadeoutEnabled && preset.fadeoutDuration) {
+                    const fadeSecs = preset.fadeoutDuration;
+                    const fadeStr = fadeSecs >= 60 ? `${fadeSecs / 60}m` : `${fadeSecs}s`;
+                    timerInfo += ` (${fadeStr} fade)`;
+                }
+            }
+
+            item.innerHTML = `
+                <div class="preset-info">
+                    <span class="preset-name">${this.escapeHtml(preset.name)}</span>
+                    <span class="preset-details">${soundCount} sound${soundCount !== 1 ? 's' : ''}: ${soundNames}${timerInfo}</span>
+                </div>
+                <div class="preset-actions">
+                    <button class="preset-load-btn" data-preset-id="${preset.id}" title="Load preset">
+                        <span>Load</span>
+                    </button>
+                    <button class="preset-delete-btn" data-preset-id="${preset.id}" title="Delete preset">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(item);
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 

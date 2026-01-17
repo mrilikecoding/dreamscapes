@@ -240,6 +240,232 @@ select:hover, select:focus {
     min-width: 60px;
 }
 
+/* Fade-out Control */
+.fadeout-control {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-weight: 500;
+    user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: var(--bg-primary);
+    border-radius: 11px;
+    transition: var(--transition);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.toggle-label input:checked + .toggle-switch {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.toggle-label input:checked + .toggle-switch::after {
+    left: 20px;
+    background: var(--text-primary);
+}
+
+.toggle-label input:focus + .toggle-switch {
+    outline: 2px solid var(--accent-secondary);
+    outline-offset: 2px;
+}
+
+.fadeout-control select {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.fadeout-control select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.fadeout-control.disabled {
+    opacity: 0.5;
+}
+
+.fadeout-control.disabled .toggle-label {
+    cursor: not-allowed;
+}
+
+.controls-hint {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: -0.5rem;
+    margin-bottom: 2rem;
+    padding: 0 1rem;
+    line-height: 1.4;
+}
+
+/* Presets Section */
+.presets-section {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.presets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.presets-header h2 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.save-preset-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.save-preset-btn:hover {
+    background: var(--accent-secondary);
+    transform: translateY(-1px);
+}
+
+.save-preset-btn .btn-icon {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.presets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.presets-empty {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem;
+}
+
+.preset-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid transparent;
+    transition: var(--transition);
+}
+
+.preset-item:hover {
+    border-color: rgba(124, 58, 237, 0.3);
+}
+
+.preset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.preset-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.preset-details {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preset-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.preset-load-btn,
+.preset-delete-btn {
+    padding: 0.4rem 0.75rem;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.preset-load-btn {
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.preset-load-btn:hover {
+    background: var(--accent-secondary);
+}
+
+.preset-delete-btn {
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    padding: 0.4rem 0.6rem;
+}
+
+.preset-delete-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
 /* Sound Grid */
 .sound-grid {
     display: flex;
@@ -345,40 +571,113 @@ select:hover, select:focus {
     height: 16px;
 }
 
-/* Science Info Section */
-.science-info {
+/* Research Section */
+.research-section {
     margin-bottom: 3rem;
 }
 
-.science-info h2 {
+.research-section h2 {
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     color: var(--text-primary);
+    font-size: 1.5rem;
 }
 
-.info-cards {
+.research-intro {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 1rem;
+}
+
+.research-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
-.info-card {
+.research-card {
     background: var(--bg-secondary);
     padding: 1.5rem;
     border-radius: var(--border-radius);
     border-left: 3px solid var(--accent-primary);
 }
 
-.info-card h4 {
+.research-card h3 {
     color: var(--accent-secondary);
-    margin-bottom: 0.5rem;
-    font-size: 1rem;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
 }
 
-.info-card p {
+.research-card p {
     color: var(--text-secondary);
     font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.research-card p:last-of-type {
+    margin-bottom: 1.25rem;
+}
+
+.research-card strong {
+    color: var(--text-primary);
+}
+
+.sources {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.sources h4 {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.sources ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sources li {
+    margin-bottom: 0.4rem;
+}
+
+.sources a {
+    color: var(--accent-secondary);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: var(--transition);
+    line-height: 1.4;
+    display: inline-block;
+}
+
+.sources a:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+.research-disclaimer {
+    background: var(--bg-secondary);
+    padding: 1.25rem;
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.research-disclaimer p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
     line-height: 1.5;
+    margin: 0;
+}
+
+.research-disclaimer strong {
+    color: var(--accent-secondary);
 }
 
 /* Footer */
@@ -448,6 +747,31 @@ footer p {
     .visualizer {
         height: 80px;
     }
+
+    .presets-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+    }
+
+    .save-preset-btn {
+        justify-content: center;
+    }
+
+    .preset-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .preset-actions {
+        margin-left: 0;
+        justify-content: flex-end;
+    }
+
+    .research-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 480px) {
@@ -468,8 +792,16 @@ footer p {
         min-width: 32px;
     }
 
-    .info-cards {
-        grid-template-columns: 1fr;
+    .research-section h2 {
+        font-size: 1.25rem;
+    }
+
+    .research-card {
+        padding: 1.25rem;
+    }
+
+    .presets-section {
+        padding: 1rem;
     }
 }
 
@@ -484,7 +816,10 @@ footer p {
 /* Focus styles for keyboard navigation */
 .sound-card:focus,
 select:focus,
-input[type="range"]:focus {
+input[type="range"]:focus,
+.save-preset-btn:focus,
+.preset-load-btn:focus,
+.preset-delete-btn:focus {
     outline: 2px solid var(--accent-secondary);
     outline-offset: 2px;
 }
