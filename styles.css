@@ -445,11 +445,17 @@ h1 {
     background: #000;
     z-index: 9999;
     display: none;
-    cursor: pointer;
 }
 
 .screensaver-overlay.active {
     display: block;
+    cursor: none;
+}
+
+/* Hide scrollbar and cursor when screensaver is active */
+body.screensaver-active {
+    overflow: hidden;
+    cursor: none;
 }
 
 #screensaverCanvas {

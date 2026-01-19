@@ -1256,6 +1256,9 @@ class DreamscapeApp {
         overlay.classList.add('active');
         overlay.classList.remove('hide-hint');
 
+        // Hide scrollbar and cursor on body
+        document.body.classList.add('screensaver-active');
+
         // Hide hint after 3 seconds
         setTimeout(() => {
             overlay.classList.add('hide-hint');
@@ -1269,6 +1272,9 @@ class DreamscapeApp {
     stopScreensaver() {
         this.screensaverActive = false;
         document.getElementById('screensaverOverlay').classList.remove('active');
+
+        // Restore scrollbar and cursor on body
+        document.body.classList.remove('screensaver-active');
 
         if (this.screensaverAnimationId) {
             cancelAnimationFrame(this.screensaverAnimationId);
